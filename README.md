@@ -1,4 +1,5 @@
-# Guild Board — Project D: Course Support & Activity Dashboard
+# Guild Board 
+## Project D: Course Support & Activity Dashboard
 
 **Course:** Individual Software Development Process' 2026 (ISP-SKE26)
 
