@@ -1,2 +1,46 @@
-# GuildBoard
-This is project for ISP class
+# Guild Board — Project D: Course Support & Activity Dashboard
+
+**Course:** Individual Software Development Process' 2026 (ISP-SKE26)
+
+## Group Members
+
+| Name | Student ID | GitHub Username |
+|---|---|---|
+| Picha Wiwattanawongsa | 6610545430 | PichaWi |
+| Prima Xivivadh | 6610545332 | pmx-16 |
+| Navin Bunthuphanich | 6610545251 | SporkFoon |
+| Phasathat Jaruchitsophon | 6610545375 | Tasachii |
+
+## Objective
+
+To design and develop a Course Support & Activity Dashboard that maintains accurate, up-to-date course activity and support information, and provides appropriate role-based access for lecturers, TAs, administrators, and students as replacing the current reliance on outdated, uncoordinated tools.
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React + Vite + Tailwind CSS + shadcn/ui + MaterialUI |
+| Backend | Django REST Framework (DRF) |
+| Database | SQL (SQLite for local dev / PostgreSQL for staging — confirm which) |
+| Auth | Google OAuth2, restricted to @ku.th domain (SRS-11, SRS-12) |
+| Project Management | Jira |
+
+## Architecture Summary
+
+Modular Monolith using MVC (View / Controller / Model) — DRF serves the API and
+enforces auth/validation, React consumes it as a separate frontend app.
+See `/docs/srs/` sections 9–11 for full architecture rationale.
+
+## Tech / Environment
+
+- Backend: Django REST Framework, Python virtual environment (see `/source/backend/requirements.txt`)
+- Frontend: Node + Vite dev server, run via `npm install && npm run dev` in `/source/frontend`
+- Copy `.env.example` to `.env` in both frontend and backend before running locally — never commit the real `.env`
+- Task tracking has moved to Jira; keep `/docs/iteration-reports/` as the exported record of each iteration for grading purposes
+
+## Iteration
+- Iteration1: https://youtu.be/xCs2F6Ga67U?si=K0rZJTp5d6w1YDOn
+- Iteration2
+- Iteration3
+- Iteration4
+- Iteration5
