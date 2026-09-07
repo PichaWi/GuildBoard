@@ -39,7 +39,7 @@ See `/docs/srs/` sections 9–11 for full architecture rationale.
 - Copy `.env.example` to `.env` in both frontend and backend before running locally — never commit the real `.env`
 - Task tracking has moved to Jira; keep `/docs/iteration-reports/` as the exported record of each iteration for grading purposes
 
-## Iteration
+## Video for each Iteration
 - Iteration1: https://youtu.be/xCs2F6Ga67U?si=K0rZJTp5d6w1YDOn
 - Iteration2
 - Iteration3
