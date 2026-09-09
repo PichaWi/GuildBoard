@@ -45,3 +45,40 @@ See `/docs/srs/` sections 9–11 for full architecture rationale.
 - Iteration3
 - Iteration4
 - Iteration5
+
+---
+
+## Installation
+
+### Quick Setup (Windows)
+After cloning, double-click the setup script:
+```
+setup.bat
+```
+This will automatically create a virtual environment and install all dependencies.
+
+### Manual Setup
+
+To clone this project:
+```sh
+git clone https://github.com/PichaWi/GuildBoard.git
+cd GuildBoard
+```
+
+To create and run Python Environment for this project:
+
+Windows:
+```bat
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Mac:
+```sh
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+---
