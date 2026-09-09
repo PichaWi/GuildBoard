@@ -1,36 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GuildBoard - Course Support & Activity Dashboard</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>GuildBoard - Academic Portal Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+    <style>
+        @layer base {
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                overscroll-behavior: none;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            background-color: #f8f9ff;
+            background-image:
+                radial-gradient(at 15% 15%, rgba(0, 50, 34, 0.04) 0px, transparent 55%),
+                radial-gradient(at 85% 85%, rgba(0, 50, 34, 0.05) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(248, 249, 255, 1) 0px, rgba(248, 249, 255, 0.6) 100%);
+        }
+
+        .bg-grid-pattern {
+            background-size: 32px 32px;
+            background-image:
+                linear-gradient(to right, rgba(0, 50, 34, 0.025) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 50, 34, 0.025) 1px, transparent 1px);
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-variant": "#d9e3f4",
+                        "outline-variant": "#c0c9c2",
+                        "surface-dim": "#d1dbec",
+                        "surface": "#f8f9ff",
+                        "surface-tint": "#306952",
+                        "tertiary-fixed": "#92f7c3",
+                        "on-background": "#121c28",
+                        "primary-fixed": "#b3efd2",
+                        "tertiary-container": "#004b30",
+                        "secondary-fixed": "#b1f0ce",
+                        "outline": "#707973",
+                        "secondary": "#2c694e",
+                        "surface-container-highest": "#d9e3f4",
+                        "tertiary-fixed-dim": "#75daa8",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed": "#002114",
+                        "primary-fixed-dim": "#98d3b7",
+                        "primary": "#003222",
+                        "on-tertiary-fixed": "#002113",
+                        "tertiary": "#00321f",
+                        "inverse-surface": "#27313e",
+                        "secondary-fixed-dim": "#95d4b3",
+                        "on-tertiary-fixed-variant": "#005235",
+                        "on-primary-fixed": "#002115",
+                        "on-surface": "#121c28",
+                        "secondary-container": "#aeeecb",
+                        "surface-container": "#e5eeff",
+                        "on-primary-container": "#7fb99e",
+                        "on-error-container": "#93000a",
+                        "background": "#f8f9ff",
+                        "surface-container-low": "#eef4ff",
+                        "on-tertiary-container": "#5bbf90",
+                        "surface-container-high": "#dfe9fa",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#0e5138",
+                        "on-primary-fixed-variant": "#14503b",
+                        "primary-container": "#0a4a35",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#98d3b7",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#404944",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary-container": "#316e52"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "calendar-cell-min-height": "7.5rem",
+                        "sidebar-width": "16rem",
+                        "space-2xl": "3rem",
+                        "space-xs": "0.5rem",
+                        "space-lg": "1.5rem",
+                        "sidebar-collapsed-width": "4.5rem",
+                        "space-md": "1rem",
+                        "space-xl": "2rem",
+                        "space-2xs": "0.25rem",
+                        "space-sm": "0.75rem"
+                    },
+                    fontFamily: {
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "title-sm": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-xl-mobile": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    fontSize: {
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "title-sm": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+                        "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        };
+    </script>
 </head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1>GuildBoard</h1>
-            <p class="subtitle">Course Support & Activity Dashboard</p>
-        </header>
-        <main class="card">
-            <h2>System Status</h2>
-            <div id="status" class="status-indicator">Checking backend connection...</div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="label">Architecture:</span>
-                    <span class="value">Modular Monolith (MVC)</span>
+
+<body
+    class="bg-background font-body-md text-on-surface antialiased min-h-screen bg-grid-pattern flex flex-col justify-between selection:bg-primary selection:text-white">
+
+    <!-- Top Header Utility -->
+    <header class="w-full px-space-md py-space-sm sm:px-space-xl flex items-center justify-between z-10">
+        <div
+            class="flex items-center gap-space-2xs text-label-sm font-label-sm text-primary bg-surface-container px-space-sm py-1 rounded-full border border-outline-variant/30 backdrop-blur-sm shadow-sm">
+            <span class="inline-block w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span class="font-semibold">Fall 2026 Semester</span>
+        </div>
+        <nav aria-label="Support Navigation">
+            <a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 group"
+                href="#it-support">
+                <span
+                    class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors">support_agent</span>
+                <span>Campus IT Help Desk</span>
+            </a>
+        </nav>
+    </header>
+
+    <!-- Main Login Content -->
+    <main class="flex-grow flex items-center justify-center px-space-md py-space-xl sm:px-space-lg">
+        <!-- Centered Card Container -->
+        <div
+            class="w-full max-w-[460px] bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm p-space-lg sm:p-space-xl relative z-10">
+
+            <!-- Brand & Title Header -->
+            <div class="text-center mb-space-lg">
+                <div class="flex justify-center mb-space-sm">
+                    <div
+                        class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-surface-container-low border border-outline-variant/20 shadow-2xs">
+                        <img alt="GuildBoard Logo" class="h-9 w-auto object-contain"
+                            src="https://lh3.googleusercontent.com/aida/AEtjO1U7SvYyJjb9xsRL4gvfiwvwI5dpZ4tgG-yexKsIWNUOjbTyYl-DqPmX92WBXfs6G3Lz7_kuvU5U-pAfXuNgxAFqbweJpfrr4K0-YpqPKbGAkTucbN-ms4gskMIwjKv7uRGZZsFTmZ4kx1NitGNuQ4P8U-A0erSBm4sqL8OZN3zWj6oR5dOrG28QdfIvkMCxh0oL_GSF_JlIYZ20L-y6Rbv8zvElMikUZrZkliKZP3kZqwJvHjUoWLfkwwc">
+                    </div>
                 </div>
-                <div class="info-item">
-                    <span class="label">Backend:</span>
-                    <span class="value">FastAPI (Python 3.10)</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Database:</span>
-                    <span class="value">PostgreSQL (Supabase)</span>
+                <h1 class="font-headline-md text-headline-md text-primary font-bold tracking-tight">GuildBoard</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-1">Sign in to your academic portal</p>
+
+                <!-- Role Access Pill -->
+                <div class="mt-space-xs">
+                    <span
+                        class="inline-flex items-center px-space-sm py-0.5 rounded-full font-label-sm text-label-sm bg-secondary-container/40 text-primary-container border border-secondary-container/60 font-semibold">
+                        Faculty &amp; Student Single Sign-On
+                    </span>
                 </div>
             </div>
-        </main>
-    </div>
-    <script src="/static/js/app.js"></script>
+
+            <!-- Prominent Google SSO Button -->
+            <div class="mb-space-md">
+                <button onclick="window.location.href='/calendar'" aria-label="Sign in with University Google Account"
+                    class="w-full flex items-center justify-center gap-space-sm px-space-md py-space-sm bg-surface-container-lowest border border-outline-variant/40 hover:border-primary/40 hover:bg-surface-container-low rounded-xl font-title-sm text-title-sm text-on-surface transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-2xs active:scale-[0.99] cursor-pointer"
+                    type="button">
+                    <!-- Google Logo SVG -->
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            fill="#4285F4"></path>
+                        <path
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            fill="#34A853"></path>
+                        <path
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                            fill="#FBBC05"></path>
+                        <path
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                            fill="#EA4335"></path>
+                    </svg>
+                    <span class="font-semibold">Continue with University Google Account</span>
+                </button>
+            </div>
+
+            <!-- Institutional Divider -->
+            <div class="relative my-space-md">
+                <div aria-hidden="true" class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-outline-variant/30"></div>
+                </div>
+                <div class="relative flex justify-center font-label-sm text-label-sm">
+                    <span class="bg-surface-container-lowest px-space-xs text-on-surface-variant font-normal">or sign in
+                        with credentials</span>
+                </div>
+            </div>
+
+            <!-- Institutional Login Form -->
+            <form action="/calendar" class="space-y-space-sm" method="GET">
+                <!-- University ID / Email -->
+                <div class="flex flex-col gap-space-2xs">
+                    <label class="font-title-sm text-title-sm text-on-surface font-semibold"
+                        for="university-id">Institutional ID or University Email</label>
+                    <div class="relative">
+                        <input autocomplete="username"
+                            class="w-full h-11 px-space-md rounded-xl border border-outline-variant/40 bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:bg-surface-container-lowest focus:border-primary-container focus:ring-2 focus:ring-primary-container outline-none transition-all"
+                            id="university-id" name="university-id"
+                            placeholder="e.g., ssmith@university.edu or U-893041" required="" type="text">
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="flex flex-col gap-space-2xs">
+                    <div class="flex items-center justify-between">
+                        <label class="font-title-sm text-title-sm text-on-surface font-semibold"
+                            for="password">Password</label>
+                        <a class="font-label-sm text-label-sm text-primary hover:underline font-semibold"
+                            href="#reset-password">Forgot?</a>
+                    </div>
+                    <div class="relative">
+                        <input autocomplete="current-password"
+                            class="w-full h-11 px-space-md rounded-xl border border-outline-variant/40 bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:bg-surface-container-lowest focus:border-primary-container focus:ring-2 focus:ring-primary-container outline-none transition-all"
+                            id="password" name="password" placeholder="••••••••••••" required="" type="password">
+                    </div>
+                </div>
+
+                <!-- Remember Device & Help -->
+                <div class="flex items-center justify-between pt-1">
+                    <label class="flex items-center cursor-pointer select-none">
+                        <input
+                            class="w-4 h-4 rounded border-outline-variant text-primary-container focus:ring-primary-container cursor-pointer"
+                            id="remember-device" name="remember-device" type="checkbox">
+                        <span class="ml-space-2xs font-body-sm text-body-sm text-on-surface-variant">Remember this
+                            device (30 days)</span>
+                    </label>
+                    <a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                        href="#login-help">Need help?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-space-xs">
+                    <button
+                        class="w-full h-11 flex items-center justify-center rounded-xl font-title-sm text-title-sm font-bold text-on-primary bg-primary-container hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 shadow-sm transition-all duration-150 active:scale-[0.99] cursor-pointer"
+                        type="submit">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+
+            <!-- Security Guarantee Notice -->
+            <div class="mt-space-lg pt-space-md border-t border-outline-variant/20 text-center">
+                <p class="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+                    <span class="inline-flex items-center justify-center gap-1 font-medium text-on-surface">
+                        <span class="material-symbols-outlined text-sm text-primary">verified_user</span>
+                        Protected by Institutional SSO &amp; Dual-Factor Auth
+                    </span>
+                    <br>
+                    By signing in, you agree to the <a
+                        class="text-primary font-semibold underline hover:text-primary-container"
+                        href="#conduct-policy">Academic Code of Conduct</a>.
+                </p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Page Footer -->
+    <footer class="w-full py-space-sm text-center font-label-sm text-label-sm text-on-surface-variant/70 z-10">
+        <p>© 2026 GuildBoard Higher Education Systems. All rights reserved.</p>
+    </footer>
+
 </body>
+
 </html>
