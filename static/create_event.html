@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>GuildBoard - Create Event</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+  <style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-variant": "#d9e3f4",
+            "outline-variant": "#c0c9c2",
+            "surface-dim": "#d1dbec",
+            "surface": "#f8f9ff",
+            "surface-tint": "#306952",
+            "tertiary-fixed": "#92f7c3",
+            "on-background": "#121c28",
+            "primary-fixed": "#b3efd2",
+            "tertiary-container": "#004b30",
+            "secondary-fixed": "#b1f0ce",
+            "outline": "#707973",
+            "secondary": "#2c694e",
+            "surface-container-highest": "#d9e3f4",
+            "tertiary-fixed-dim": "#75daa8",
+            "on-secondary": "#ffffff",
+            "on-secondary-fixed": "#002114",
+            "primary-fixed-dim": "#98d3b7",
+            "primary": "#003222",
+            "on-tertiary-fixed": "#002113",
+            "tertiary": "#00321f",
+            "inverse-surface": "#27313e",
+            "secondary-fixed-dim": "#95d4b3",
+            "on-tertiary-fixed-variant": "#005235",
+            "on-primary-fixed": "#002115",
+            "on-surface": "#121c28",
+            "secondary-container": "#aeeecb",
+            "surface-container": "#e5eeff",
+            "on-primary-container": "#7fb99e",
+            "on-error-container": "#93000a",
+            "background": "#f8f9ff",
+            "surface-container-low": "#eef4ff",
+            "on-tertiary-container": "#5bbf90",
+            "surface-container-high": "#dfe9fa",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "error-container": "#ffdad6",
+            "error": "#ba1a1a",
+            "on-secondary-fixed-variant": "#0e5138",
+            "on-primary-fixed-variant": "#14503b",
+            "primary-container": "#0a4a35",
+            "on-tertiary": "#ffffff",
+            "inverse-primary": "#98d3b7",
+            "surface-bright": "#f8f9ff",
+            "on-primary": "#ffffff",
+            "on-surface-variant": "#404944",
+            "inverse-on-surface": "#eaf1ff",
+            "on-secondary-container": "#316e52"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          spacing: {
+            "calendar-cell-min-height": "7.5rem",
+            "sidebar-width": "16rem",
+            "space-2xl": "3rem",
+            "space-xs": "0.5rem",
+            "space-lg": "1.5rem",
+            "sidebar-collapsed-width": "4.5rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-2xs": "0.25rem",
+            "space-sm": "0.75rem"
+          },
+          fontFamily: {
+            "label-sm": ["Inter"],
+            "headline-md": ["Inter"],
+            "title-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "title-md": ["Inter"],
+            "headline-xl-mobile": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-xl": ["Inter"]
+          },
+          fontSize: {
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "title-sm": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "title-md": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-background font-body-md text-on-surface antialiased">
+  
+  <!-- Lecturer Left Navigation Sidebar (Persistent Geometry: w-sidebar-width: 16rem) -->
+  <aside class="fixed left-0 top-0 h-full w-sidebar-width bg-surface-container-lowest border-r border-outline-variant/30 z-50 flex flex-col justify-between">
+    <div class="flex flex-col">
+      <!-- Identical Branding Header -->
+      <div class="h-16 px-space-md flex items-center gap-space-xs border-b border-outline-variant/20">
+        <img alt="GuildBoard Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1U7SvYyJjb9xsRL4gvfiwvwI5dpZ4tgG-yexKsIWNUOjbTyYl-DqPmX92WBXfs6G3Lz7_kuvU5U-pAfXuNgxAFqbweJpfrr4K0-YpqPKbGAkTucbN-ms4gskMIwjKv7uRGZZsFTmZ4kx1NitGNuQ4P8U-A0erSBm4sqL8OZN3zWj6oR5dOrG28QdfIvkMCxh0oL_GSF_JlIYZ20L-y6Rbv8zvElMikUZrZkliKZP3kZqwJvHjUoWLfkwwc">
+        <div class="flex flex-col">
+          <span class="font-title-md text-title-md text-primary tracking-tight font-bold">GuildBoard</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-[10px]">Lecturer Portal</span>
+        </div>
+      </div>
+      
+      <!-- Nav Header & Links -->
+      <div class="px-space-md pt-space-md">
+        <span class="px-space-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-[11px] font-semibold">Faculty Nav</span>
+      </div>
+      <nav class="flex flex-col gap-space-2xs px-space-xs pt-space-xs">
+        <a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl font-title-sm text-title-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="dashboard" href="/">
+          <span class="material-symbols-outlined text-[20px]">dashboard</span>
+          <span class="font-title-sm text-title-sm">Dashboard</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl font-title-sm text-title-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="course-calendar" href="/calendar">
+          <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+          <span class="font-title-sm text-title-sm">Course Calendar</span>
+        </a>
+        <!-- Active Link: Create Event -->
+        <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all bg-primary-container text-on-primary font-title-sm shadow-sm" data-path="create-event" href="/create_event.html">
+          <span class="material-symbols-outlined text-[20px]">add_circle</span>
+          <span class="font-title-sm text-title-sm">Create Event</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl font-title-sm text-title-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="settings" href="#">
+          <span class="material-symbols-outlined text-[20px]">settings</span>
+          <span class="font-title-sm text-title-sm">Settings</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- User Profile Avatar Footer (Lecturer Role) -->
+    <div class="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest">
+      <div class="flex items-center gap-space-sm px-space-xs py-space-xs">
+        <img alt="Ryan Gosling" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H">
+        <div class="flex flex-col min-w-0 flex-1">
+          <span class="font-title-sm text-title-sm text-on-surface truncate">Ryan Gosling</span>
+          <span class="font-body-sm text-body-sm text-on-surface-variant truncate">Faculty Instructor</span>
+          <span class="text-[10px] text-on-surface-variant/70 opacity-50 tracking-wider font-mono italic select-none">literally me</span>
+        </div>
+        <button class="text-on-surface-variant hover:text-on-surface cursor-pointer" type="button">
+          <span class="material-symbols-outlined text-[20px]">more_vert</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout (Offset: pl-sidebar-width) -->
+  <div class="pl-sidebar-width">
+    <!-- Top Header (Fixed h-16) -->
+    <header class="fixed top-0 left-sidebar-width right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/20 z-40 px-space-lg flex items-center justify-between">
+      <div class="flex items-center gap-space-md">
+        <nav class="flex items-center gap-space-2xs text-on-surface-variant font-label-md text-label-md">
+          <a href="/calendar" class="hover:text-on-surface transition-colors cursor-pointer">GuildBoard Portal</a>
+          <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span class="text-primary font-semibold">Create Event</span>
+        </nav>
+      </div>
+      <div class="flex items-center gap-space-sm">
+        <div class="flex items-center space-x-2 text-label-sm font-label-sm text-primary bg-surface-container px-3 py-1 rounded-full border border-outline-variant/30 shadow-2xs">
+          <span class="inline-block w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+          <span class="font-semibold">Fall 2026 Semester</span>
+        </div>
+        <div class="h-6 w-px bg-outline-variant/30 mx-space-2xs"></div>
+        <button aria-label="Notifications" class="p-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer" type="button">
+          <span class="material-symbols-outlined text-[20px]">notifications</span>
+        </button>
+        <img alt="Ryan Gosling" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H">
+      </div>
+    </header>
+
+    <!-- Page Body -->
+    <main class="w-full pt-16 bg-background min-h-screen">
+      <div class="flex flex-col w-full pb-space-2xl">
+        <div class="p-space-lg max-w-[1720px] mx-auto w-full space-y-space-lg">
+          
+          <!-- Header Control Band / Title Area -->
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-outline-variant/20">
+            <div>
+              <div class="flex items-center gap-space-xs mb-1">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary-container text-on-secondary-container">
+                  <span class="material-symbols-outlined text-xs">school</span>
+                </span>
+                <span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-semibold">Faculty Curriculum Dispatch</span>
+                <span class="text-outline-variant">•</span>
+                <span class="font-label-sm text-label-sm text-secondary font-semibold">Academic Year 2026-2027</span>
+              </div>
+              <h1 class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">Create New Course Event</h1>
+              <p class="font-body-md text-body-md text-on-surface-variant mt-1">Schedule lectures, project milestones, or laboratory sessions for enrolled students.</p>
+            </div>
+            <!-- Live Draft Sync Pill -->
+            <div class="flex items-center gap-space-xs self-start md:self-auto bg-surface-container-low px-space-md py-space-xs rounded-full border border-outline-variant/30">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+              </span>
+              <span class="font-label-md text-label-md text-on-surface-variant">Live Draft Sync: <strong class="text-primary font-semibold">Active</strong></span>
+            </div>
+          </div>
+
+          <!-- Main Form Grid Container -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+            
+            <!-- Primary Event Form Card (Left 8 cols) -->
+            <form class="lg:col-span-8 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-space-xl flex flex-col gap-space-lg" id="createEventForm">
+              
+              <!-- Section: Title -->
+              <div class="flex flex-col gap-space-2xs">
+                <div class="flex items-center justify-between">
+                  <label class="font-title-sm text-title-sm text-on-surface font-semibold flex items-center gap-space-2xs" for="eventTitle">
+                    Event Title <span class="text-error font-bold">*</span>
+                  </label>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant font-medium" id="titleCounter">0 / 120</span>
+                </div>
+                <div class="relative">
+                  <input class="w-full h-11 px-space-md rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant/60 outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 transition-all" id="eventTitle" maxlength="120" placeholder="e.g., Milestone 2: Architecture Submission, SCS Lab Workshop" required="" type="text" value="Milestone 2: Architecture Submission">
+                </div>
+                <p class="font-label-sm text-label-sm text-on-surface-variant">Clear, distinct titles assist students in calendar synchronization.</p>
+              </div>
+
+              <!-- Section: Course Code & Event Classification -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                <!-- Course Picker -->
+                <div class="flex flex-col gap-space-2xs">
+                  <label class="font-title-sm text-title-sm text-on-surface font-semibold flex items-center gap-space-2xs" for="courseSelect">
+                    <span class="material-symbols-outlined text-[18px] text-primary">auto_stories</span>
+                    Course Code <span class="text-error font-bold">*</span>
+                  </label>
+                  <div class="relative">
+                    <select class="w-full h-11 px-space-md pr-space-xl appearance-none rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 cursor-pointer transition-all" id="courseSelect">
+                      <option selected="" value="ISP">ISP - Individual Software Development Process</option>
+                      <option value="KE">KE - Knowledge Engineering</option>
+                      <option value="SCS">SCS - Software Communication Skills</option>
+                      <option value="FM">FM - Folk Music &amp; Acoustic Culture</option>
+                    </select>
+                    <span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+                  </div>
+                </div>
+                
+                <!-- Event Classification Dropdown -->
+                <div class="flex flex-col gap-space-2xs">
+                  <label class="font-title-sm text-title-sm text-on-surface font-semibold flex items-center gap-space-2xs" for="typeSelect">
+                    <span class="material-symbols-outlined text-[18px] text-primary">category</span>
+                    Event Classification <span class="text-error font-bold">*</span>
+                  </label>
+                  <div class="relative">
+                    <select class="w-full h-11 px-space-md pr-space-xl appearance-none rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 cursor-pointer transition-all" id="typeSelect">
+                      <option value="Lecture">Lecture (Classroom &amp; Broadcast)</option>
+                      <option value="Lab">Lab (Hands-on Practicum)</option>
+                      <option selected="" value="Project Milestone">Project Milestone (Major Checkpoint)</option>
+                      <option value="Assignment Due">Assignment Due</option>
+                      <option value="Workshop">Workshop / Guest Speaker</option>
+                    </select>
+                    <span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section: Timetable Details (Date & Time Grid) -->
+              <div class="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/20 flex flex-col gap-space-md">
+                <div class="flex items-center justify-between">
+                  <span class="font-title-sm text-title-sm text-primary flex items-center gap-space-2xs font-semibold">
+                    <span class="material-symbols-outlined text-[18px] text-secondary">calendar_today</span>
+                    Schedule Timetable
+                  </span>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">ICT GMT+7 (Bangkok)</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+                  <!-- Date Field (Year 2026) -->
+                  <div class="flex flex-col gap-space-2xs">
+                    <label class="font-label-md text-label-md text-on-surface-variant font-medium" for="eventDate">Event Date</label>
+                    <div class="relative">
+                      <input class="w-full h-10 px-space-sm rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md outline-none focus:ring-2 focus:ring-primary-container border border-outline-variant/30" id="eventDate" type="date" value="2026-10-20">
+                    </div>
+                  </div>
+                  <!-- Start Time -->
+                  <div class="flex flex-col gap-space-2xs">
+                    <label class="font-label-md text-label-md text-on-surface-variant font-medium" for="startTime">Commencement</label>
+                    <div class="relative">
+                      <input class="w-full h-10 px-space-sm rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md outline-none focus:ring-2 focus:ring-primary-container border border-outline-variant/30" id="startTime" type="time" value="10:00">
+                    </div>
+                  </div>
+                  <!-- End Time -->
+                  <div class="flex flex-col gap-space-2xs">
+                    <label class="font-label-md text-label-md text-on-surface-variant font-medium" for="endTime">Conclusion / Deadline</label>
+                    <div class="relative">
+                      <input class="w-full h-10 px-space-sm rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md outline-none focus:ring-2 focus:ring-primary-container border border-outline-variant/30" id="endTime" type="time" value="12:00">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section: Venue Location & Instructor -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                <!-- Location -->
+                <div class="flex flex-col gap-space-2xs">
+                  <label class="font-title-sm text-title-sm text-on-surface font-semibold flex items-center gap-space-2xs" for="locationInput">
+                    <span class="material-symbols-outlined text-[18px] text-primary">location_on</span>
+                    Physical Venue / Meeting Link
+                  </label>
+                  <div class="relative">
+                    <input class="w-full h-11 px-space-md rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant/60 outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 transition-all" id="locationInput" placeholder="e.g., Room 402, Engineering Hall or https://zoom.us/..." type="text" value="Room 402, Engineering Hall">
+                  </div>
+                </div>
+                <!-- Instructor Selector -->
+                <div class="flex flex-col gap-space-2xs">
+                  <label class="font-title-sm text-title-sm text-on-surface font-semibold flex items-center gap-space-2xs" for="instructorSelect">
+                    <span class="material-symbols-outlined text-[18px] text-primary">person_outline</span>
+                    Presiding Instructor
+                  </label>
+                  <div class="relative">
+                    <select class="w-full h-11 px-space-md pr-space-xl appearance-none rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 cursor-pointer transition-all" id="instructorSelect">
+                      <option selected="" value="Aj. Hutchathai">Aj. Hutchathai (Lecturer)</option>
+                      <option value="Aj. Milk">Aj. Milk (Lecturer)</option>
+                      <option value="Aj. Tem">Aj. Tem (Lecturer)</option>
+                      <option value="Aj. Pajee">Aj. Pajee (Lecturer)</option>
+                    </select>
+                    <span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section: Guidelines & Deliverables -->
+              <div class="flex flex-col gap-space-2xs">
+                <label class="font-title-sm text-title-sm text-on-surface font-semibold flex items-center justify-between" for="eventDescription">
+                  <span class="flex items-center gap-space-2xs">
+                    <span class="material-symbols-outlined text-[18px] text-primary">description</span>
+                    Syllabus Guidelines &amp; Deliverable Details
+                  </span>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant">Markdown supported</span>
+                </label>
+                <textarea class="w-full p-space-md rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant/60 outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 resize-y transition-all" id="eventDescription" placeholder="Outline required preparation, submission endpoints, git repository tag naming, and grading criteria..." rows="4">Teams must finalize their Stage 2 component diagrams before the session. Please ensure your GitHub commit hashes are linked inside the GuildBoard submission tracker prior to the scheduled presentation block.</textarea>
+              </div>
+
+              <!-- Section: Dispatch Options -->
+              <div class="flex flex-col gap-space-sm p-space-md rounded-xl bg-surface-container-low border border-outline-variant/20">
+                <label class="flex items-start gap-space-sm cursor-pointer select-none">
+                  <input checked="" class="mt-1 w-4 h-4 text-primary-container rounded focus:ring-primary-container cursor-pointer" id="publishImmediately" type="checkbox">
+                  <div class="flex flex-col">
+                    <span class="font-title-sm text-title-sm text-on-surface font-medium flex items-center gap-space-xs">
+                      Publish immediately to cohort schedule
+                      <span class="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm flex items-center gap-1 font-semibold">
+                        <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                        Published
+                      </span>
+                    </span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Makes entry immediately visible to all enrolled students on their GuildBoard agenda.</span>
+                  </div>
+                </label>
+                <label class="flex items-start gap-space-sm cursor-pointer select-none">
+                  <input class="mt-1 w-4 h-4 text-primary-container rounded focus:ring-primary-container cursor-pointer" id="notifyEmail" type="checkbox">
+                  <div class="flex flex-col">
+                    <span class="font-title-sm text-title-sm text-on-surface font-medium">Broadcast academic alert email</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Dispatches an automated notification email via faculty relay to student inboxes.</span>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Actions Toolbar -->
+              <div class="pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md">
+                <a class="font-title-sm text-title-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 order-3 sm:order-1" href="/calendar">
+                  <span class="material-symbols-outlined text-sm">arrow_back</span>
+                  Discard &amp; Return
+                </a>
+                <div class="flex items-center gap-space-sm w-full sm:w-auto order-2">
+                  <button class="flex-1 sm:flex-initial h-11 px-space-lg rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface font-title-sm text-title-sm transition-colors cursor-pointer" id="btnSaveDraft" type="button">
+                    Save as Draft
+                  </button>
+                  <button class="flex-1 sm:flex-initial h-11 px-space-xl rounded-xl bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm font-bold shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-space-xs focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer" id="btnPublish" type="submit">
+                    <span class="material-symbols-outlined text-lg">event_available</span>
+                    Publish Event
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <!-- Right Column: Interactive Live Preview & Insights (Right 4 cols) -->
+            <div class="lg:col-span-4 flex flex-col gap-space-lg">
+              
+              <!-- Live Card Preview -->
+              <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-space-lg flex flex-col gap-space-md">
+                <div class="flex items-center justify-between pb-space-xs border-b border-outline-variant/10">
+                  <span class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface-variant font-bold">Student View Preview</span>
+                  <span class="font-label-sm text-label-sm text-primary font-semibold">Live Render</span>
+                </div>
+                
+                <!-- Simulated Student Event Card -->
+                <div class="p-space-md rounded-lg bg-surface-container-lowest shadow-md flex flex-col gap-space-xs relative overflow-hidden border border-outline-variant/20">
+                  <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+                  <div class="pl-space-2xs flex items-center justify-between">
+                    <span class="px-space-xs py-0.5 rounded bg-surface-container font-label-sm text-label-sm text-on-surface font-semibold" id="previewCourseBadge">ISP</span>
+                    <span class="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-medium" id="previewTypeBadge">Project Milestone</span>
+                  </div>
+                  <div class="pl-space-2xs pt-1">
+                    <h4 class="font-title-sm text-title-sm text-on-surface font-bold leading-tight" id="previewTitle">Milestone 2: Architecture Submission</h4>
+                  </div>
+                  <div class="pl-space-2xs flex flex-col gap-1 text-on-surface-variant font-body-sm text-body-sm pt-space-2xs">
+                    <div class="flex items-center gap-space-xs">
+                      <span class="material-symbols-outlined text-sm text-secondary">schedule</span>
+                      <span id="previewTiming">Oct 20, 2026 • 10:00 - 12:00</span>
+                    </div>
+                    <div class="flex items-center gap-space-xs">
+                      <span class="material-symbols-outlined text-sm text-secondary">meeting_room</span>
+                      <span class="truncate" id="previewLocation">Room 402, Engineering Hall</span>
+                    </div>
+                  </div>
+                  <div class="pl-space-2xs pt-space-xs flex items-center justify-between">
+                    <div class="flex items-center gap-space-xs">
+                      <span class="material-symbols-outlined text-base text-on-surface-variant">account_circle</span>
+                      <span class="font-label-sm text-label-sm text-on-surface font-medium" id="previewInstructor">Aj. Hutchathai</span>
+                    </div>
+                    <span class="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm flex items-center gap-1 font-semibold">
+                      <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                      Scheduled
+                    </span>
+                  </div>
+                </div>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">Simulates how this event renders on student calendar grids.</p>
+              </div>
+
+              <!-- Integrity Checks -->
+              <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-space-lg flex flex-col gap-space-md">
+                <div class="flex items-center gap-space-xs">
+                  <span class="material-symbols-outlined text-primary text-xl">fact_check</span>
+                  <h3 class="font-title-sm text-title-sm text-on-surface font-bold">Room &amp; Schedule Integrity</h3>
+                </div>
+                <div class="flex flex-col gap-space-xs font-body-sm text-body-sm">
+                  <div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-low">
+                    <span class="flex items-center gap-space-2xs text-on-surface">
+                      <span class="material-symbols-outlined text-sm text-secondary">check_circle</span>
+                      Room 402 Availability
+                    </span>
+                    <span class="text-secondary font-semibold font-label-sm text-label-sm">No Conflict</span>
+                  </div>
+                  <div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-low">
+                    <span class="flex items-center gap-space-2xs text-on-surface">
+                      <span class="material-symbols-outlined text-sm text-secondary">check_circle</span>
+                      Cohort Exam Overlap
+                    </span>
+                    <span class="text-secondary font-semibold font-label-sm text-label-sm">Clear</span>
+                  </div>
+                  <div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-low">
+                    <span class="flex items-center gap-space-2xs text-on-surface">
+                      <span class="material-symbols-outlined text-sm text-secondary">check_circle</span>
+                      Instructor Load (Aj. Hutchathai)
+                    </span>
+                    <span class="text-on-surface-variant font-label-sm text-label-sm font-semibold">3 / 4 Slots</span>
+                  </div>
+                </div>
+                <div class="p-space-sm rounded-lg bg-secondary-container/40 flex items-start gap-space-xs">
+                  <span class="material-symbols-outlined text-primary text-base mt-0.5">tips_and_updates</span>
+                  <div class="flex flex-col">
+                    <span class="font-label-md text-label-md text-primary font-bold">Recommended Slot</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Tuesday mornings typically have 98% in-person lecture attendance for third-year cohorts.</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Academic Banner -->
+              <div class="relative overflow-hidden rounded-xl bg-primary text-on-primary p-space-lg shadow-sm">
+                <div class="relative z-10 flex flex-col gap-space-xs">
+                  <div class="flex items-center gap-space-2xs">
+                    <span class="material-symbols-outlined text-tertiary-fixed text-lg">shield</span>
+                    <span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary-fixed font-semibold">Accredited Faculty</span>
+                  </div>
+                  <h4 class="font-title-md text-title-md font-bold text-surface-bright">GuildBoard Curriculum Engine</h4>
+                  <p class="font-body-sm text-body-sm text-surface-variant/80">Every event posted is indexed in the university's learning management datastore and synced to Google Calendar feeds.</p>
+                </div>
+                <div class="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-surface-tint/20 blur-xl pointer-events-none"></div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification Modal -->
+  <div class="fixed bottom-6 right-6 max-w-sm bg-primary text-on-primary p-space-md rounded-xl shadow-xl flex items-center gap-space-sm transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none z-50" id="publishToast">
+    <div class="w-8 h-8 rounded-full bg-secondary-container text-primary flex items-center justify-center shrink-0">
+      <span class="material-symbols-outlined text-lg">done_all</span>
+    </div>
+    <div class="flex flex-col">
+      <span class="font-title-sm text-title-sm font-semibold">Event Published</span>
+      <span class="font-body-sm text-body-sm text-surface-variant">Entry added to GuildBoard calendar.</span>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const titleInput = document.getElementById('eventTitle');
+      const titleCounter = document.getElementById('titleCounter');
+      const courseSelect = document.getElementById('courseSelect');
+      const typeSelect = document.getElementById('typeSelect');
+      const eventDate = document.getElementById('eventDate');
+      const startTime = document.getElementById('startTime');
+      const endTime = document.getElementById('endTime');
+      const locationInput = document.getElementById('locationInput');
+      const instructorSelect = document.getElementById('instructorSelect');
+
+      const previewTitle = document.getElementById('previewTitle');
+      const previewCourseBadge = document.getElementById('previewCourseBadge');
+      const previewTypeBadge = document.getElementById('previewTypeBadge');
+      const previewTiming = document.getElementById('previewTiming');
+      const previewLocation = document.getElementById('previewLocation');
+      const previewInstructor = document.getElementById('previewInstructor');
+
+      const form = document.getElementById('createEventForm');
+      const toast = document.getElementById('publishToast');
+
+      function updatePreview() {
+        if (titleInput && previewTitle) {
+          const val = titleInput.value.trim();
+          previewTitle.textContent = val ? val : 'Milestone 2: Architecture Submission';
+          if (titleCounter) {
+            titleCounter.textContent = `${titleInput.value.length} / 120`;
+          }
+        }
+
+        if (courseSelect && previewCourseBadge) {
+          previewCourseBadge.textContent = courseSelect.value;
+        }
+
+        if (typeSelect && previewTypeBadge) {
+          previewTypeBadge.textContent = typeSelect.value;
+        }
+
+        if (eventDate && startTime && endTime && previewTiming) {
+          const d = eventDate.value ? new Date(eventDate.value + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Oct 20, 2026';
+          previewTiming.textContent = `${d} • ${startTime.value || '10:00'} - ${endTime.value || '12:00'}`;
+        }
+
+        if (locationInput && previewLocation) {
+          previewLocation.textContent = locationInput.value || 'Room 402, Engineering Hall';
+        }
+
+        if (instructorSelect && previewInstructor) {
+          previewInstructor.textContent = instructorSelect.value;
+        }
+      }
+
+      [titleInput, courseSelect, typeSelect, eventDate, startTime, endTime, locationInput, instructorSelect].forEach(el => {
+        if (el) {
+          el.addEventListener('input', updatePreview);
+          el.addEventListener('change', updatePreview);
+        }
+      });
+
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          if (toast) {
+            const title = toast.querySelector('.font-title-sm');
+            const desc = toast.querySelector('.font-body-sm');
+            if (title) title.textContent = 'Event Published';
+            if (desc) desc.textContent = 'Entry added to GuildBoard calendar.';
+            toast.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+              toast.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+            }, 3500);
+          }
+        });
+      }
+
+      const draftBtn = document.getElementById('btnSaveDraft');
+      if (draftBtn && toast) {
+        draftBtn.addEventListener('click', function() {
+          const title = toast.querySelector('.font-title-sm');
+          const desc = toast.querySelector('.font-body-sm');
+          if (title) title.textContent = 'Draft Stored Locally';
+          if (desc) desc.textContent = 'Changes saved to instructor workspace cache.';
+          toast.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+          setTimeout(() => {
+            toast.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+            if (title) title.textContent = 'Event Published';
+            if (desc) desc.textContent = 'Entry added to GuildBoard calendar.';
+          }, 3000);
+        });
+      }
+
+      updatePreview();
+    })();
+  </script>
+</body>
+</html>
