@@ -41,6 +41,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # ===== Database (SQL) =====
+guildboard.db
 *.sqlite3
 *.sql.bak
 /db/data/
