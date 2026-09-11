@@ -24,7 +24,7 @@ To design and develop a Course Support & Activity Dashboard that maintains accur
 | Backend | Django REST Framework (DRF) |
 | Database | SQL (SQLite for local dev / PostgreSQL for staging — confirm which) |
 | Auth | Google OAuth2, restricted to @ku.th domain (SRS-11, SRS-12) |
-| Project Management | Jira |
+| Project Management | Github Project |
 
 ## Architecture Summary
 
