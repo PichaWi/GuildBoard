@@ -159,10 +159,15 @@
           <span class="material-symbols-outlined text-[20px]">calendar_month</span>
           <span class="font-title-sm text-title-sm">Course Calendar</span>
         </a>
-        <a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+        <a class="hidden flex items-center gap-space-sm px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
           data-path="course-materials" href="/">
           <span class="material-symbols-outlined text-[20px]">dashboard</span>
           <span class="font-title-sm text-title-sm">Dashboard</span>
+        </a>
+        <a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+          data-path="create-event" href="/create-event" hidden id="createEventNav">
+          <span class="material-symbols-outlined text-[20px]">add_circle</span>
+          <span class="font-title-sm text-title-sm">Create Event</span>
         </a>
         <a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
           data-path="settings" href="#">
@@ -474,6 +479,26 @@
 
   <!-- Interactive Calendar JavaScript Logic -->
   <script>
+    async function applyRoleNavigation() {
+      const createEventNav = document.getElementById('createEventNav');
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error(`Role lookup failed (${response.status})`);
+        const user = await response.json();
+        const isStudent = String(user.role).toLowerCase() === 'student';
+        createEventNav.hidden = isStudent;
+        createEventNav.classList.toggle('hidden', isStudent);
+        createEventNav.setAttribute('aria-hidden', String(isStudent));
+      } catch (error) {
+        console.warn(error.message);
+        createEventNav.hidden = true;
+        createEventNav.classList.add('hidden');
+        createEventNav.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    applyRoleNavigation();
+
     // Course Events Data (Strict Weekly Schedule & E11S Room Assignments)
     const calendarEvents = [
       {

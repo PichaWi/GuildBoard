@@ -232,7 +232,7 @@
             </div>
 
             <!-- Institutional Login Form -->
-            <form action="/calendar" class="space-y-space-sm" method="GET">
+            <form class="space-y-space-sm" id="credentialLoginForm">
                 <!-- University ID / Email -->
                 <div class="flex flex-col gap-space-2xs">
                     <label class="font-title-sm text-title-sm text-on-surface font-semibold"
@@ -281,6 +281,7 @@
                         Sign In
                     </button>
                 </div>
+                <p aria-live="polite" class="hidden font-body-sm text-body-sm text-error" id="loginError" role="alert"></p>
             </form>
 
             <!-- Security Guarantee Notice -->
@@ -305,6 +306,38 @@
         <p>© 2026 GuildBoard Higher Education Systems. All rights reserved.</p>
     </footer>
 
+    <script>
+        const credentialLoginForm = document.getElementById('credentialLoginForm');
+        const loginError = document.getElementById('loginError');
+
+        credentialLoginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const submitButton = credentialLoginForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            loginError.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/auth/dev-login', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('university-id').value.trim(),
+                        password: document.getElementById('password').value
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(result.detail || `Sign in failed (${response.status})`);
+                }
+                window.location.assign('/calendar');
+            } catch (error) {
+                loginError.textContent = error.message;
+                loginError.classList.remove('hidden');
+                submitButton.disabled = false;
+            }
+        });
+    </script>
 </body>
 
 </html>

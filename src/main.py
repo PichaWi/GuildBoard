@@ -1,17 +1,40 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 # Ensure project root is in sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from src.config import settings
+from src.config import settings, validate_session_secret
+from src.database import init_db
+from src.views import router as api_router
 
-app = FastAPI(title=settings.app_name)
+SESSION_SECRET = settings.session_secret
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Validate the exact immutable value captured by SessionMiddleware below.
+    validate_session_secret(SESSION_SECRET)
+    init_db()
+    yield
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SESSION_SECRET,
+    session_cookie="guildboard_session",
+    same_site="lax",
+    https_only=settings.environment.strip().casefold() == "production",
+)
+app.include_router(api_router)
 
 # Define static directories
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -69,4 +92,3 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("src.main:app", host="127.0.0.1", port=settings.port, reload=True)
-

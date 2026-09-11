@@ -81,4 +81,38 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Event API integration
+
+The current iteration exposes `POST /api/events` for the Create Event form and
+`GET /api/auth/me` for frontend role checks. Until Google OAuth is connected,
+local QA can use `POST /api/auth/dev-login` with server-configured demo accounts.
+Successful login creates a signed, HttpOnly session cookie; event permissions
+come from that session and never from browser storage or caller-supplied role
+headers. Development login is disabled by default and cannot run in production.
+
+Configure local-only credentials in `.env` (never commit the real values):
+
+```dotenv
+ENVIRONMENT=development
+SESSION_SECRET=<long-random-value>
+DEV_LOGIN_ENABLED=true
+DEMO_STUDENT_EMAIL=<student-email>
+DEMO_STUDENT_PASSWORD=<student-password>
+DEMO_LECTURER_EMAIL=<lecturer-email>
+DEMO_LECTURER_PASSWORD=<lecturer-password>
+```
+
+Run the direct Student API authorization check while the server is running:
+
+```sh
+QA_STUDENT_EMAIL=<student-email> \
+QA_STUDENT_PASSWORD=<student-password> \
+python scripts/qa_student_event_permission.py
+```
+
+The check logs in as Student, sends a spoofed `X-User-Role: Lecturer` header,
+and passes only when the backend returns the expected `403 Forbidden` response.
+Hiding the Create Event navigation item is defense-in-depth, not the
+authorization boundary.
+
 ---

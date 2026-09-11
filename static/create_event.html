@@ -159,7 +159,7 @@
           <span class="font-title-sm text-title-sm">Course Calendar</span>
         </a>
         <!-- Active Link: Create Event -->
-        <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all bg-primary-container text-on-primary font-title-sm shadow-sm" data-path="create-event" href="/create_event.html">
+        <a aria-current="page" class="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all bg-primary-container text-on-primary font-title-sm shadow-sm" data-path="create-event" href="/create-event" id="createEventNav">
           <span class="material-symbols-outlined text-[20px]">add_circle</span>
           <span class="font-title-sm text-title-sm">Create Event</span>
         </a>
@@ -519,7 +519,7 @@
   </div>
 
   <!-- Toast Notification Modal -->
-  <div class="fixed bottom-6 right-6 max-w-sm bg-primary text-on-primary p-space-md rounded-xl shadow-xl flex items-center gap-space-sm transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none z-50" id="publishToast">
+  <div aria-live="polite" class="fixed bottom-6 right-6 max-w-sm bg-primary text-on-primary p-space-md rounded-xl shadow-xl flex items-center gap-space-sm transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none z-50" id="publishToast" role="status">
     <div class="w-8 h-8 rounded-full bg-secondary-container text-primary flex items-center justify-center shrink-0">
       <span class="material-symbols-outlined text-lg">done_all</span>
     </div>
@@ -550,6 +550,50 @@
 
       const form = document.getElementById('createEventForm');
       const toast = document.getElementById('publishToast');
+      const publishBtn = document.getElementById('btnPublish');
+      const draftBtn = document.getElementById('btnSaveDraft');
+      const createEventNav = document.getElementById('createEventNav');
+      let currentRole = 'student';
+
+      function showToast(titleText, descriptionText) {
+        if (!toast) return;
+        const title = toast.querySelector('.font-title-sm');
+        const description = toast.querySelector('.font-body-sm');
+        if (title) title.textContent = titleText;
+        if (description) description.textContent = descriptionText;
+        toast.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+        window.setTimeout(() => {
+          toast.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+        }, 3500);
+      }
+
+      function applyRolePermissions(role) {
+        currentRole = String(role || 'student').toLowerCase();
+        const isStudent = currentRole === 'student';
+        if (createEventNav) {
+          createEventNav.hidden = isStudent;
+          createEventNav.classList.toggle('hidden', isStudent);
+          createEventNav.setAttribute('aria-hidden', String(isStudent));
+        }
+        if (isStudent) {
+          form?.querySelectorAll('input, select, textarea, button').forEach(control => {
+            control.disabled = true;
+          });
+          showToast('Permission Denied', 'Students cannot create or publish course events.');
+        }
+      }
+
+      async function loadCurrentRole() {
+        try {
+          const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
+          if (!response.ok) throw new Error(`Role lookup failed (${response.status})`);
+          const user = await response.json();
+          applyRolePermissions(user.role);
+        } catch (error) {
+          console.warn(error.message);
+          applyRolePermissions('student');
+        }
+      }
 
       function updatePreview() {
         if (titleInput && previewTitle) {
@@ -590,38 +634,58 @@
       });
 
       if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
           e.preventDefault();
-          if (toast) {
-            const title = toast.querySelector('.font-title-sm');
-            const desc = toast.querySelector('.font-body-sm');
-            if (title) title.textContent = 'Event Published';
-            if (desc) desc.textContent = 'Entry added to GuildBoard calendar.';
-            toast.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-              toast.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
-            }, 3500);
+          if (currentRole === 'student') {
+            showToast('Permission Denied', 'Students cannot create or publish course events.');
+            return;
+          }
+
+          const payload = {
+            title: titleInput.value.trim(),
+            course_code: courseSelect.value,
+            event_type: typeSelect.value,
+            event_date: eventDate.value,
+            start_time: startTime.value,
+            end_time: endTime.value,
+            location: locationInput.value.trim(),
+            instructor: instructorSelect.value,
+            description: document.getElementById('eventDescription').value.trim(),
+            publish_immediately: document.getElementById('publishImmediately').checked,
+            notify_email: document.getElementById('notifyEmail').checked
+          };
+
+          publishBtn.disabled = true;
+          publishBtn.setAttribute('aria-busy', 'true');
+          try {
+            const response = await fetch('/api/events', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              throw new Error(result.detail || `Publish failed (${response.status})`);
+            }
+            showToast('Event Published', `Event #${result.id} was added to the GuildBoard calendar.`);
+          } catch (error) {
+            showToast('Publish Failed', error.message);
+          } finally {
+            publishBtn.disabled = false;
+            publishBtn.removeAttribute('aria-busy');
           }
         });
       }
 
-      const draftBtn = document.getElementById('btnSaveDraft');
       if (draftBtn && toast) {
         draftBtn.addEventListener('click', function() {
-          const title = toast.querySelector('.font-title-sm');
-          const desc = toast.querySelector('.font-body-sm');
-          if (title) title.textContent = 'Draft Stored Locally';
-          if (desc) desc.textContent = 'Changes saved to instructor workspace cache.';
-          toast.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
-          setTimeout(() => {
-            toast.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
-            if (title) title.textContent = 'Event Published';
-            if (desc) desc.textContent = 'Entry added to GuildBoard calendar.';
-          }, 3000);
+          showToast('Draft Stored Locally', 'Changes saved to instructor workspace cache.');
         });
       }
 
       updatePreview();
+      loadCurrentRole();
     })();
   </script>
 </body>
