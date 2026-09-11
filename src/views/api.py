@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -10,7 +11,12 @@ from src.controllers.auth import (
     authenticate_dev_user,
     get_current_user,
 )
-from src.controllers.events import create_event
+from src.controllers.events import (
+    EventValidationError,
+    create_event,
+    ensure_can_create_events,
+    validate_event_payload,
+)
 from src.database import get_db
 from src.models.event import EventCreate, EventRead
 
@@ -37,6 +43,15 @@ def _user_response(user: AuthenticatedUser) -> CurrentUserRead:
         auth_mode=user.auth_mode,
     )
 
+
+async def read_event_payload(request: Request) -> Any:
+    content_type = request.headers.get("content-type", "")
+    if content_type.startswith(("application/x-www-form-urlencoded", "multipart/form-data")):
+        return dict(await request.form())
+    try:
+        return await request.json()
+    except ValueError:
+        return {}
 
 @router.post(
     "/auth/dev-login",
@@ -69,10 +84,27 @@ def get_me(user: Annotated[AuthenticatedUser, Depends(get_current_user)]) -> Cur
     response_model=EventRead,
     status_code=status.HTTP_201_CREATED,
     summary="Create an event (Lecturer, TA, or Admin only)",
+    responses={
+        400: {"description": "REQUIRED_FIELDS_MISSING: a required field is absent or blank"},
+        401: {"description": "Not signed in"},
+        403: {"description": "Signed in as a Student"},
+        422: {"description": "INVALID_FIELD_FORMAT: a value could not be parsed"},
+    },
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {"application/json": {"schema": EventCreate.model_json_schema()}},
+        }
+    },
 )
 def post_event(
-    payload: EventCreate,
     user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    raw_payload: Annotated[Any, Depends(read_event_payload)],
     db: Annotated[Session, Depends(get_db)],
-) -> EventRead:
+):
+    ensure_can_create_events(user)
+    try:
+        payload = validate_event_payload(raw_payload)
+    except EventValidationError as error:
+        return JSONResponse(status_code=error.status_code, content=error.to_response())
     return create_event(db, payload, user)
