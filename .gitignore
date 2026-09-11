@@ -56,6 +56,3 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
-
-# ===== Jira / misc exports (avoid dumping local exports into repo) =====
-*.jira-export.json

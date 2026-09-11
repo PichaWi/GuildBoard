@@ -20,17 +20,15 @@ To design and develop a Course Support & Activity Dashboard that maintains accur
 
 | Layer | Technology |
 |---|---|
-| Frontend | React + Vite + Tailwind CSS + shadcn/ui + MaterialUI |
-| Backend | Django REST Framework (DRF) |
-| Database | SQL (SQLite for local dev / PostgreSQL for staging — confirm which) |
+| Frontend | Static HTML / CSS / vanilla JS |
+| Backend | FastAPI |
+| Database | SQLAlchemy ORM / PostgreSQL |
 | Auth | Google OAuth2, restricted to @ku.th domain (SRS-11, SRS-12) |
-| Project Management | Github Project |
+| Project Management | Plane.so |
 
 ## Architecture Summary
 
-Modular Monolith using MVC (View / Controller / Model) — DRF serves the API and
-enforces auth/validation, React consumes it as a separate frontend app.
-See `/docs/srs/` sections 9–11 for full architecture rationale.
+FastAPI serves the API ( `src/views`, `src/controllers`) and enforces auth/validation; the data model (`src/models/event.py`) is defined in SQLAlchemy and auto-creates its own schema on startup — no manual SQL needed. The frontend currently(Iteration1) is the static HTML/JS in `static/`, wired to the API via `fetch()`; a React frontend is planned for a later iteration. Can be see in `Project_documents/GuildBoard_ Software Proposal.pdf` and the SRS for full architecture rationale
 
 ## Tech / Environment
 
