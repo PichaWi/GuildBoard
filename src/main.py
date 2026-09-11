@@ -14,6 +14,7 @@ if str(BASE_DIR) not in sys.path:
 from src.config import settings, validate_session_secret
 from src.database import init_db
 from src.views import router as api_router
+from src.views.google_auth import router as google_auth_router
 
 SESSION_SECRET = settings.session_secret
 
@@ -35,6 +36,7 @@ app.add_middleware(
     https_only=settings.environment.strip().casefold() == "production",
 )
 app.include_router(api_router)
+app.include_router(google_auth_router)
 
 # Define static directories
 BASE_DIR = Path(__file__).resolve().parent.parent
