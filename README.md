@@ -20,7 +20,7 @@ To design and develop a Course Support & Activity Dashboard that maintains accur
 
 | Layer | Technology |
 |---|---|
-| Frontend | Static HTML / CSS / vanilla JS |
+| Frontend | React 19 / Vite / Tailwind CSS |
 | Backend | FastAPI |
 | Database | SQLAlchemy ORM / PostgreSQL |
 | Auth | Google OAuth2, restricted to @ku.th domain (SRS-11, SRS-12) |
@@ -28,12 +28,12 @@ To design and develop a Course Support & Activity Dashboard that maintains accur
 
 ## Architecture Summary
 
-FastAPI serves the API ( `src/views`, `src/controllers`) and enforces auth/validation; the data model (`src/models/event.py`) is defined in SQLAlchemy and auto-creates its own schema on startup — no manual SQL needed. The frontend currently(Iteration1) is the static HTML/JS in `static/`, wired to the API via `fetch()`; a React frontend is planned for a later iteration. Can be see in `Project_documents/GuildBoard_ Software Proposal.pdf` and the SRS for full architecture rationale
+FastAPI serves the backend API (`src/views`, `src/controllers`) and enforces auth/validation; the data model (`src/models/event.py`) is defined in SQLAlchemy and auto-creates its own schema on startup. The frontend is built with React 19 and Vite in `/frontend`, proxying `/api` and `/auth` requests to the FastAPI backend.
 
 ## Tech / Environment
 
-- Backend: Django REST Framework, Python virtual environment (see `/source/backend/requirements.txt`)
-- Frontend: Node + Vite dev server, run via `npm install && npm run dev` in `/source/frontend`
+- Backend: FastAPI, Python virtual environment (see `requirements.txt`)
+- Frontend: Node + Vite dev server, run via `npm install && npm run dev` in `/frontend`
 - Copy `.env.example` to `.env` in both frontend and backend before running locally — never commit the real `.env`
 - Task tracking has moved to Jira; keep `/docs/iteration-reports/` as the exported record of each iteration for grading purposes
 
@@ -78,6 +78,16 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### Frontend Setup (React + Vite)
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+The React app will be running at `http://localhost:5173/` and proxies backend `/api` requests to `http://localhost:8000/`.
 
 ## Event API integration
 

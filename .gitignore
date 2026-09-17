@@ -23,7 +23,6 @@ staticfiles/
 .venv/
 venv/
 env/
-setup.bat
 pip-log.txt
 *.log
 celerybeat-schedule
