@@ -38,9 +38,10 @@ app.add_middleware(
 app.include_router(api_router)
 app.include_router(google_auth_router)
 
-# Define static directories
+# Define directories
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = Path("/app/static") if Path("/app/static").exists() else BASE_DIR / "static"
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
 
 # Ensure static directory exists
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -48,39 +49,83 @@ STATIC_DIR.mkdir(parents=True, exist_ok=True)
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-@app.get("/")
-async def serve_index():
-    index_file = STATIC_DIR / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
-    return {"message": "Welcome to GuildBoard API", "status": "running"}
+if FRONTEND_DIST.exists() and (FRONTEND_DIST / "index.html").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
-@app.get("/calendar")
-async def serve_calendar():
-    calendar_file = STATIC_DIR / "calendar.html"
-    if calendar_file.exists():
-        return FileResponse(str(calendar_file))
-    return {"message": "Calendar page not found", "status": "error"}
+    @app.get("/favicon.svg")
+    async def serve_favicon():
+        fav = FRONTEND_DIST / "favicon.svg"
+        if fav.exists():
+            return FileResponse(str(fav))
+        return {"status": "not_found"}
 
-@app.get("/create_event")
-@app.get("/create-event")
-@app.get("/event-creation")
-@app.get("/event_creation")
-async def serve_create_event():
-    create_event_file = STATIC_DIR / "create_event.html"
-    if not create_event_file.exists():
-        create_event_file = STATIC_DIR / "event_creation.html"
-    if create_event_file.exists():
-        return FileResponse(str(create_event_file))
-    return {"message": "Create event page not found", "status": "error"}
+    @app.get("/logo.png")
+    async def serve_logo():
+        logo = FRONTEND_DIST / "logo.png"
+        if logo.exists():
+            return FileResponse(str(logo))
+        return {"status": "not_found"}
 
-@app.get("/login")
-@app.get("/LoginPage")
-async def serve_login():
-    index_file = STATIC_DIR / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
-    return {"message": "Login page not found", "status": "error"}
+    @app.get("/calendar")
+    async def serve_calendar():
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
+
+    @app.get("/create_event")
+    @app.get("/create-event")
+    @app.get("/event-creation")
+    @app.get("/event_creation")
+    async def serve_create_event():
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
+
+    @app.get("/login")
+    @app.get("/LoginPage")
+    async def serve_login():
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
+
+    @app.get("/")
+    async def serve_root():
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
+
+    @app.get("/{full_path:path}")
+    async def serve_spa_fallback(full_path: str):
+        file_path = FRONTEND_DIST / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
+else:
+    @app.get("/")
+    async def serve_index():
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        return {"message": "Welcome to GuildBoard API", "status": "running"}
+
+    @app.get("/calendar")
+    async def serve_calendar():
+        calendar_file = STATIC_DIR / "calendar.html"
+        if calendar_file.exists():
+            return FileResponse(str(calendar_file))
+        return {"message": "Calendar page not found", "status": "error"}
+
+    @app.get("/create_event")
+    @app.get("/create-event")
+    @app.get("/event-creation")
+    @app.get("/event_creation")
+    async def serve_create_event():
+        create_event_file = STATIC_DIR / "create_event.html"
+        if not create_event_file.exists():
+            create_event_file = STATIC_DIR / "event_creation.html"
+        if create_event_file.exists():
+            return FileResponse(str(create_event_file))
+        return {"message": "Create event page not found", "status": "error"}
+
+    @app.get("/login")
+    @app.get("/LoginPage")
+    async def serve_login():
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        return {"message": "Login page not found", "status": "error"}
 
 @app.get("/api/health")
 async def health_check():
