@@ -13,6 +13,14 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+:: Check Node/npm installation
+where npm >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [ERROR] npm is not found in PATH. Please install Node.js and npm.
+    pause
+    exit /b 1
+)
+
 :: Check if virtual environment already exists
 if not exist "venv\Scripts\activate.bat" (
     echo [INFO] Creating virtual environment in .\venv ...
@@ -46,6 +54,23 @@ if exist "requirements.txt" (
     )
 ) else (
     echo [WARNING] requirements.txt not found. Skipping dependency installation.
+)
+
+:: Install Frontend dependencies
+if exist "frontend\package.json" (
+    echo [INFO] Installing frontend dependencies using npm...
+    cd frontend
+    call npm install
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to install frontend dependencies.
+        cd ..
+        pause
+        exit /b 1
+    )
+    cd ..
+    echo [OK] Frontend dependencies installed successfully.
+) else (
+    echo [WARNING] frontend\package.json not found. Skipping frontend setup.
 )
 
 echo.
