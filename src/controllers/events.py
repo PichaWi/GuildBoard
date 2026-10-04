@@ -1,14 +1,13 @@
 from typing import Any
 
-from fastapi import HTTPException, status
+from fastapi import status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from src.controllers.auth import AuthenticatedUser, UserRole
+from src.controllers.access import Action, ensure_permission
+from src.controllers.auth import AuthenticatedUser
 from src.models.event import Event, EventCreate
 
-
-EVENT_CREATOR_ROLES = {UserRole.LECTURER, UserRole.TA, UserRole.ADMIN}
 
 ERROR_REQUIRED_FIELDS_MISSING = "REQUIRED_FIELDS_MISSING"
 ERROR_INVALID_FIELD_FORMAT = "INVALID_FIELD_FORMAT"
@@ -33,14 +32,6 @@ class EventValidationError(Exception):
 
     def to_response(self) -> dict[str, Any]:
         return {"detail": self.detail, "error": self.error, **self.extra}
-
-
-def ensure_can_create_events(user: AuthenticatedUser) -> None:
-    if user.role not in EVENT_CREATOR_ROLES:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Students are not permitted to create events.",
-        )
 
 
 def required_fields() -> list[str]:
@@ -83,7 +74,7 @@ def validate_event_payload(raw: Any) -> EventCreate:
 
 
 def create_event(db: Session, payload: EventCreate, user: AuthenticatedUser) -> Event:
-    ensure_can_create_events(user)
+    ensure_permission(user, Action.CREATE_EVENT)
 
     event = Event(**payload.model_dump(), created_by_role=user.role.value)
     db.add(event)
