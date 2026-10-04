@@ -1,30 +1,7 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 
-// Mock Data from previous iteration
-const calendarEvents = [
-  { id: 1, title: "SCS Lab Setup", course: "SCS", date: "2026-10-07", type: "Lab", colorClass: "bg-secondary", time: "9:00 AM - 12:00 PM", location: "E11S601", instructor: "Aj. Tem", isRich: false },
-  { id: 2, title: "KE Lab Intro", course: "KE", date: "2026-10-02", type: "Lab", colorClass: "bg-primary-container", time: "1:00 PM - 3:00 PM", location: "E11S602", instructor: "Aj. Hutchathai", isRich: false },
-  { id: 3, title: "ISP Architecture Review", course: "ISP", date: "2026-10-12", type: "Lecture & Workshop", colorClass: "bg-primary-container", time: "1:00 PM - 4:00 PM", location: "E11S603", instructor: "Aj. Milk", isRich: true },
-  { id: 4, title: "Software Communication Skills", course: "SCS", date: "2026-10-21", type: "Lecture & Workshop", colorClass: "bg-secondary-container", time: "9:00 AM - 12:00 PM", location: "E11S601", instructor: "Aj. Tem", isRich: true },
-  { id: 5, title: "Folk Music: Traditional Scales", course: "FM", date: "2026-10-15", type: "Lecture", colorClass: "bg-outline-variant", time: "9:00 AM - 12:00 PM", location: "E11S604", instructor: "Aj. Pajee", isRich: true },
-  { id: 6, title: "ISP Lab & Process Check", course: "ISP", date: "2026-10-20", type: "Assignment Due", colorClass: "bg-secondary", time: "1:00 PM - 4:00 PM", location: "E11S602", instructor: "Aj. Milk", isRich: true },
-  { id: 7, title: "KE: Ontology & Model Milestone", course: "KE", date: "2026-10-23", type: "Project Milestone", colorClass: "bg-primary-container", time: "9:00 AM - 12:00 PM", location: "E11S603", instructor: "Aj. Hutchathai", isRich: true },
-  { id: 8, title: "ISP Final Project Demo", course: "ISP", date: "2026-11-10", type: "Project Milestone", colorClass: "bg-primary-container", time: "9:00 AM - 12:00 PM", location: "E11S604", instructor: "Aj. Milk", isRich: true },
-  { id: 9, title: "KE Knowledge Graph Submission", course: "KE", date: "2026-11-20", type: "Assignment Due", colorClass: "bg-secondary", time: "1:00 PM - 4:00 PM", location: "E11S601", instructor: "Aj. Hutchathai", isRich: true },
-  { id: 10, title: "FM Ensemble Performance", course: "FM", date: "2026-11-26", type: "Final Exam", colorClass: "bg-outline-variant", time: "1:00 PM - 4:00 PM", location: "E11S602", instructor: "Aj. Pajee", isRich: true },
-];
-
-const upcomingDeadlinesList = [
-  { course: "KE", title: "KE Project Milestone Submission", due: "Fri, Oct 23 · 11:59 PM", instructor: "Aj. Hutchathai", colorClass: "bg-primary-container" },
-  { course: "ISP", title: "ISP Process Review & Lab", due: "Tue, Oct 20 · 5:00 PM", instructor: "Aj. Milk", colorClass: "bg-secondary" },
-  { course: "SCS", title: "SCS Oral Presentation", due: "Wed, Oct 21 · 10:00 AM", instructor: "Aj. Tem", colorClass: "bg-secondary-container" }
-];
-
-const monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
+import { calendarEvents, upcomingDeadlinesList, monthNames } from '../mock/calendarData';
 
 // Helper to format date key YYYY-MM-DD
 function formatDateKey(year, month, day) {
@@ -33,11 +10,52 @@ function formatDateKey(year, month, day) {
   return `${year}-${m}-${d}`;
 }
 
+// Helper: get the Monday of the week containing a given date
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun, 1=Mon, ...
+  const diff = day === 0 ? -6 : 1 - day; // shift to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Helper: generate .ics content for export
+function generateICS(events) {
+  const pad = (n) => String(n).padStart(2, '0');
+  const formatICSDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  };
+
+  let ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//GuildBoard//Course Calendar//EN\r\nCALSCALE:GREGORIAN\r\n`;
+
+  events.forEach(evt => {
+    ics += `BEGIN:VEVENT\r\n`;
+    ics += `DTSTART;VALUE=DATE:${formatICSDate(evt.date)}\r\n`;
+    ics += `DTEND;VALUE=DATE:${formatICSDate(evt.date)}\r\n`;
+    ics += `SUMMARY:${evt.title}\r\n`;
+    ics += `DESCRIPTION:${evt.course} - ${evt.type} | ${evt.time} | ${evt.instructor}\r\n`;
+    ics += `LOCATION:${evt.location}\r\n`;
+    ics += `END:VEVENT\r\n`;
+  });
+
+  ics += `END:VCALENDAR\r\n`;
+  return ics;
+}
+
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+
 export default function Calendar() {
-  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 9, 1)); // October 2026 by default
-  const todayDate = new Date(2026, 9, 24); // Today highlight reference date (from original mock)
+  const now = new Date();
+  const [currentDate, setCurrentDate] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
+  const todayDate = now;
   const [activeCourses, setActiveCourses] = useState(new Set(["ISP", "KE", "SCS", "FM"]));
   const [activeView, setActiveView] = useState('Month');
+  // For week/day navigation
+  const [selectedDate, setSelectedDate] = useState(new Date(now));
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -50,7 +68,37 @@ export default function Calendar() {
     setCurrentDate(new Date(currentYear, currentMonth + 1, 1));
   };
   const goToToday = () => {
-    setCurrentDate(new Date(todayDate.getFullYear(), todayDate.getMonth(), 1));
+    const t = new Date();
+    setCurrentDate(new Date(t.getFullYear(), t.getMonth(), 1));
+    setSelectedDate(new Date(t));
+  };
+
+  // Week navigation
+  const prevWeek = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 7);
+    setSelectedDate(d);
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+  const nextWeek = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 7);
+    setSelectedDate(d);
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+
+  // Day navigation
+  const prevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d);
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+  const nextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d);
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
   };
 
   // Checkbox handler
@@ -70,6 +118,21 @@ export default function Calendar() {
     } else {
       setActiveCourses(new Set(["ISP", "KE", "SCS", "FM"]));
     }
+  };
+
+  // Export handler
+  const handleExport = () => {
+    const filtered = calendarEvents.filter(e => activeCourses.has(e.course));
+    const icsContent = generateICS(filtered);
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `guildboard_calendar_${currentYear}_${currentMonth + 1}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Calendar generation logic
@@ -117,24 +180,268 @@ export default function Calendar() {
 
   const filteredDeadlines = upcomingDeadlinesList.filter(d => activeCourses.has(d.course));
 
-  const navbarLeftContent = (
-    <>
-      <nav className="flex items-center gap-space-2xs text-on-surface-variant font-label-md text-label-md">
-        <span className="hover:text-on-surface transition-colors cursor-pointer">Guild Board Portal</span>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-primary font-semibold">Fall 2026</span>
-      </nav>
-      <div className="h-4 w-px bg-outline-variant/40"></div>
-      <div className="flex items-center gap-space-2xs bg-surface-container-low px-space-sm py-1 rounded-full border border-outline-variant/30">
-        <button onClick={prevMonth} className="text-on-surface-variant hover:text-on-surface flex items-center cursor-pointer" type="button" title="Previous Month">
-          <span className="material-symbols-outlined text-[16px]">chevron_left</span>
-        </button>
-        <span className="font-title-sm text-title-sm px-space-2xs text-on-surface">{monthNames[currentMonth]} {currentYear}</span>
-        <button onClick={nextMonth} className="text-on-surface-variant hover:text-on-surface flex items-center cursor-pointer" type="button" title="Next Month">
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        </button>
+  // ─── Week View ──────────────────────────────────────────
+  const renderWeekView = () => {
+    const weekStart = getWeekStart(selectedDate);
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      weekDays.push(d);
+    }
+
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Week header */}
+        <div className="grid grid-cols-[64px_repeat(7,1fr)] bg-surface-container-low/60 text-center border-b border-outline-variant/10">
+          <div className="py-space-xs font-label-md text-label-md text-on-surface-variant font-semibold border-r border-outline-variant/10">Time</div>
+          {weekDays.map((d, i) => {
+            const isToday = d.toDateString() === todayDate.toDateString();
+            return (
+              <div key={i} className={`py-space-xs font-label-md text-label-md font-semibold border-r border-outline-variant/10 last:border-r-0 ${isToday ? 'text-primary bg-primary/5' : 'text-on-surface-variant'}`}>
+                <div>{DAY_SHORT[d.getDay()]}</div>
+                <div className={`text-[18px] font-bold ${isToday ? 'inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white' : ''}`}>{d.getDate()}</div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Time grid */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-[64px_repeat(7,1fr)] bg-surface-container-lowest">
+            {/* Time labels */}
+            <div className="border-r border-outline-variant/10">
+              {HOURS.map(h => (
+                <div key={h} className="h-[50px] text-center text-on-surface-variant font-label-md text-[12px] border-b border-outline-variant/20 flex items-start justify-center pt-1.5">
+                  {String(h).padStart(2, '0')}:00
+                </div>
+              ))}
+            </div>
+            {/* Day columns */}
+            {weekDays.map((d, colIdx) => {
+              const dateKey = formatDateKey(d.getFullYear(), d.getMonth(), d.getDate());
+              const dayEvts = calendarEvents.filter(e => e.date === dateKey && activeCourses.has(e.course));
+              const isToday = d.toDateString() === todayDate.toDateString();
+              return (
+                <div key={colIdx} className={`relative border-r border-outline-variant/20 last:border-r-0 ${isToday ? 'bg-primary/5' : ''}`}>
+                  {HOURS.map(h => (
+                    <div key={h} className="h-[50px] border-b border-outline-variant/20"></div>
+                  ))}
+                  {/* Render events */}
+                  {dayEvts.map(evt => {
+                    // Parse start hour from time string
+                    const timeMatch = evt.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                    let startHour = 9;
+                    if (timeMatch) {
+                      startHour = parseInt(timeMatch[1]);
+                      const ampm = timeMatch[3].toUpperCase();
+                      if (ampm === 'PM' && startHour !== 12) startHour += 12;
+                      if (ampm === 'AM' && startHour === 12) startHour = 0;
+                    }
+                    const topPx = (startHour - 8) * 50;
+                    const heightPx = evt.time.includes('-') ? 100 : 50;
+
+                    return (
+                      <div
+                        key={evt.id}
+                        className={`absolute left-1 right-1 bg-surface-container-lowest rounded-md p-1.5 shadow-sm border border-outline-variant/20 overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 border-l-[3px] ${evt.colorClass.replace('bg-', 'border-')}`}
+                        style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+                      >
+                        <div className="font-semibold text-on-surface text-[11px] leading-tight truncate mb-0.5">{evt.title}</div>
+                        <div className="flex items-center gap-1 text-on-surface-variant font-label-sm text-[10px] truncate">
+                          <span className="material-symbols-outlined text-[11px]">schedule</span>
+                          {evt.time}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </>
+    );
+  };
+
+  // ─── Day View ──────────────────────────────────────────
+  const renderDayView = () => {
+    const dateKey = formatDateKey(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    const dayEvents = calendarEvents.filter(e => e.date === dateKey && activeCourses.has(e.course));
+    const isToday = selectedDate.toDateString() === todayDate.toDateString();
+    const dayLabel = `${DAY_LONG[selectedDate.getDay()]}, ${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`;
+
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Day header */}
+        <div className={`text-center py-space-sm font-title-md text-title-md font-semibold border-b border-outline-variant/10 ${isToday ? 'text-primary bg-primary/5' : 'text-on-surface bg-surface-container-low/60'}`}>
+          {dayLabel} {isToday && <span className="ml-2 text-[12px] bg-primary text-white px-2 py-0.5 rounded-full font-label-sm">Today</span>}
+        </div>
+        {/* Time grid */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-[80px_1fr] bg-surface-container-lowest">
+            {/* Time labels */}
+            <div className="border-r border-outline-variant/10">
+              {HOURS.map(h => (
+                <div key={h} className="h-[60px] text-center text-on-surface-variant font-label-md text-[13px] border-b border-outline-variant/20 flex items-start justify-center pt-2">
+                  {String(h).padStart(2, '0')}:00
+                </div>
+              ))}
+            </div>
+            {/* Event column */}
+            <div className="relative">
+              {HOURS.map(h => (
+                <div key={h} className="h-[60px] border-b border-outline-variant/20"></div>
+              ))}
+              {/* Render events */}
+              {dayEvents.map(evt => {
+                const timeMatch = evt.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                let startHour = 9;
+                if (timeMatch) {
+                  startHour = parseInt(timeMatch[1]);
+                  const ampm = timeMatch[3].toUpperCase();
+                  if (ampm === 'PM' && startHour !== 12) startHour += 12;
+                  if (ampm === 'AM' && startHour === 12) startHour = 0;
+                }
+                const topPx = (startHour - 8) * 60;
+                const heightPx = evt.time.includes('-') ? 120 : 60;
+
+                return (
+                  <div
+                    key={evt.id}
+                    className={`absolute left-2 right-2 bg-surface-container-lowest rounded-xl p-space-sm sm:p-space-md shadow-sm border border-outline-variant/20 overflow-hidden cursor-pointer hover:shadow-md transition-all z-10 border-l-[4px] ${evt.colorClass.replace('bg-', 'border-')}`}
+                    style={{ top: `${topPx}px`, height: `${heightPx}px` }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-title-md text-on-surface font-semibold mb-0.5">{evt.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block px-1.5 py-0.5 bg-surface-container/60 text-on-surface-variant font-label-sm text-[11px] rounded">{evt.course} • {evt.type}</span>
+                        </div>
+                      </div>
+                      <span className="font-title-sm font-bold text-primary shrink-0 hidden sm:block">{evt.time}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-space-lg gap-y-1 text-on-surface-variant font-body-sm text-[12px]">
+                      <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">schedule</span> <span className="sm:hidden">{evt.time}</span></span>
+                      <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">person</span> {evt.instructor}</span>
+                      <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">location_on</span> {evt.location}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {dayEvents.length === 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant text-center">
+                  <span className="material-symbols-outlined text-[48px] opacity-30 mb-2">event_busy</span>
+                  <p className="font-body-md opacity-60">No events scheduled for this day.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Agenda View ──────────────────────────────────────────
+  const renderAgendaView = () => {
+    const upcomingEvents = calendarEvents
+      .filter(e => activeCourses.has(e.course))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Group events by date
+    const grouped = {};
+    upcomingEvents.forEach(evt => {
+      if (!grouped[evt.date]) grouped[evt.date] = [];
+      grouped[evt.date].push(evt);
+    });
+
+    const sortedDates = Object.keys(grouped).sort();
+
+    return (
+      <div className="flex-1 p-space-lg flex flex-col gap-space-sm overflow-y-auto">
+        {sortedDates.map(dateStr => {
+          const d = new Date(dateStr + 'T00:00:00');
+          const isToday = d.toDateString() === todayDate.toDateString();
+          const isPast = d < new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+          return (
+            <div key={dateStr}>
+              {/* Date group header */}
+              <div className={`flex items-center gap-space-sm mb-space-xs py-space-xs px-space-sm rounded-lg ${isToday ? 'bg-primary/10' : ''}`}>
+                <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-xl ${isToday ? 'bg-primary text-white' : 'bg-surface-container text-on-surface'}`}>
+                  <span className="font-label-sm text-[10px] uppercase leading-none">{DAY_SHORT[d.getDay()]}</span>
+                  <span className="font-headline-sm font-bold leading-none">{d.getDate()}</span>
+                </div>
+                <div>
+                  <span className={`font-title-sm text-title-sm ${isToday ? 'text-primary font-bold' : 'text-on-surface font-semibold'}`}>
+                    {DAY_LONG[d.getDay()]}, {monthNames[d.getMonth()]} {d.getDate()}
+                    {isToday && <span className="ml-2 text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-full">Today</span>}
+                  </span>
+                  <div className="font-body-sm text-body-sm text-on-surface-variant">{grouped[dateStr].length} event{grouped[dateStr].length !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+              {/* Events for this date */}
+              <div className="ml-6 border-l-2 border-outline-variant/20 pl-space-md space-y-space-xs mb-space-md">
+                {grouped[dateStr].map(evt => (
+                  <div key={evt.id} className={`flex gap-space-md p-space-sm bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 hover:border-primary/40 transition-all cursor-pointer ${isPast ? 'opacity-50' : ''}`}>
+                    <div className={`w-1 rounded-full self-stretch shrink-0 ${evt.colorClass}`}></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className={`px-2 py-0.5 rounded font-label-sm text-[10px] font-semibold ${evt.colorClass} text-on-surface`}>{evt.course} • {evt.type}</span>
+                        <span className="text-on-surface-variant font-label-sm text-[12px] shrink-0">{evt.time}</span>
+                      </div>
+                      <h4 className="font-title-sm text-title-sm text-on-surface font-semibold truncate">{evt.title}</h4>
+                      <div className="flex items-center gap-space-md text-on-surface-variant font-body-sm text-[12px] mt-1">
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">person</span> {evt.instructor}</span>
+                        <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">location_on</span> {evt.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+        {sortedDates.length === 0 && (
+          <div className="flex-1 flex flex-col items-center justify-center text-on-surface-variant text-center py-space-2xl">
+            <span className="material-symbols-outlined text-[48px] opacity-30 mb-2">event_busy</span>
+            <p className="font-body-md opacity-60">No upcoming events found for selected courses.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ─── Navigation label per view ─────────────────────────────
+  const getViewNavigationLabel = () => {
+    if (activeView === 'Week') {
+      const ws = getWeekStart(selectedDate);
+      const we = new Date(ws);
+      we.setDate(ws.getDate() + 6);
+      return `${monthNames[ws.getMonth()]} ${ws.getDate()} – ${ws.getMonth() !== we.getMonth() ? monthNames[we.getMonth()] + ' ' : ''}${we.getDate()}, ${we.getFullYear()}`;
+    }
+    if (activeView === 'Day') {
+      return `${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`;
+    }
+    return `${monthNames[currentMonth]} ${currentYear}`;
+  };
+
+  const handlePrev = () => {
+    if (activeView === 'Week') prevWeek();
+    else if (activeView === 'Day') prevDay();
+    else prevMonth();
+  };
+
+  const handleNext = () => {
+    if (activeView === 'Week') nextWeek();
+    else if (activeView === 'Day') nextDay();
+    else nextMonth();
+  };
+
+  const navbarLeftContent = (
+    <nav className="flex items-center gap-space-2xs text-on-surface-variant font-label-md text-label-md">
+      <span className="hover:text-on-surface transition-colors cursor-pointer">Guild Board Portal</span>
+      <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+      <span className="text-primary font-semibold">Course Calendar</span>
+    </nav>
   );
 
   return (
@@ -153,13 +460,13 @@ export default function Calendar() {
               </div>
               <div className="h-5 w-px bg-outline-variant/30 hidden sm:block"></div>
               <div className="flex items-center gap-space-2xs">
-                <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" title="Previous Month" type="button">
+                <button onClick={handlePrev} className="p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" title="Previous" type="button">
                   <span className="material-symbols-outlined text-[20px]">chevron_left</span>
                 </button>
                 <span className="font-title-md text-title-md text-on-surface px-space-xs min-w-[140px] text-center font-bold select-none">
-                  {monthNames[currentMonth]} {currentYear}
+                  {getViewNavigationLabel()}
                 </span>
-                <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" title="Next Month" type="button">
+                <button onClick={handleNext} className="p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" title="Next" type="button">
                   <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                 </button>
                 <button onClick={goToToday} className="ml-space-2xs px-space-sm py-1 bg-surface-container-low hover:bg-surface-container text-primary font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer" type="button">
@@ -192,7 +499,7 @@ export default function Calendar() {
                   <span className="material-symbols-outlined text-[18px]">filter_list</span>
                   <span>Filter</span>
                 </button>
-                <button className="inline-flex items-center gap-space-2xs px-space-md py-2 bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm rounded-lg shadow-sm transition-all cursor-pointer" type="button">
+                <button onClick={handleExport} className="inline-flex items-center gap-space-2xs px-space-md py-2 bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm rounded-lg shadow-sm transition-all cursor-pointer" type="button">
                   <span className="material-symbols-outlined text-[18px]">file_download</span>
                   <span>Export Calendar</span>
                 </button>
@@ -204,84 +511,91 @@ export default function Calendar() {
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
             {/* Calendar Area (Left 9 cols) */}
             <div className="xl:col-span-9 bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col border border-outline-variant/20">
-              {/* Day-of-week Headers */}
-              <div className="grid grid-cols-7 bg-surface-container-low/60 text-center py-space-xs font-label-md text-label-md text-on-surface-variant font-semibold border-b border-outline-variant/10">
-                <div>Mon</div>
-                <div>Tue</div>
-                <div>Wed</div>
-                <div>Thu</div>
-                <div>Fri</div>
-                <div className="text-on-surface-variant/70">Sat</div>
-                <div className="text-on-surface-variant/70">Sun</div>
-              </div>
+              {activeView === 'Month' && (
+                <>
+                  {/* Day-of-week Headers */}
+                  <div className="grid grid-cols-7 bg-surface-container-low/60 text-center py-space-xs font-label-md text-label-md text-on-surface-variant font-semibold border-b border-outline-variant/10">
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div className="text-on-surface-variant/70">Sat</div>
+                    <div className="text-on-surface-variant/70">Sun</div>
+                  </div>
 
-              {/* Month Grid View */}
-              <div className="grid grid-cols-7 gap-px bg-surface-variant/40 bg-outline-variant/20 border-t border-outline-variant/20">
-                {calendarCells.map((cell, idx) => {
-                  if (cell.type !== 'current') {
-                    return (
-                      <div key={idx} className="min-h-calendar-cell-min-height bg-surface-container-lowest/50 p-space-xs flex flex-col justify-between opacity-40 select-none">
-                        <span className="font-label-md text-label-md text-on-surface-variant font-medium">{cell.day}</span>
-                      </div>
-                    );
-                  }
+                  {/* Month Grid View */}
+                  <div className="grid grid-cols-7 gap-px bg-surface-variant/40 bg-outline-variant/20 border-t border-outline-variant/20">
+                    {calendarCells.map((cell, idx) => {
+                      if (cell.type !== 'current') {
+                        return (
+                          <div key={idx} className="min-h-calendar-cell-min-height bg-surface-container-lowest/50 p-space-xs flex flex-col justify-between opacity-40 select-none">
+                            <span className="font-label-md text-label-md text-on-surface-variant font-medium">{cell.day}</span>
+                          </div>
+                        );
+                      }
 
-                  return (
-                    <div key={idx} className={`min-h-calendar-cell-min-height ${cell.isToday ? 'bg-surface-container-low/60 ring-1 ring-primary/20 transition-all duration-150' : cell.isWeekend ? 'bg-surface-container-lowest/80' : 'bg-surface-container-lowest hover:bg-surface-container-lowest transition-all'} p-space-2xs flex flex-col justify-between group relative`}>
-                      <div className="flex items-center justify-between p-1">
-                        {cell.isToday ? (
-                          <>
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-sm">{cell.day}</span>
-                            <span className="font-label-sm text-[10px] uppercase font-bold text-primary tracking-wider">Today</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className={`font-label-md text-label-md ${cell.isWeekend ? 'text-on-surface-variant' : 'text-on-surface'} font-semibold`}>{cell.day}</span>
-                            {cell.events.length > 0 && <span className={`w-1.5 h-1.5 rounded-full ${cell.events[0].colorClass}`}></span>}
-                          </>
-                        )}
-                      </div>
-                      
-                      <div className="space-y-1 mt-1 flex-1 flex flex-col">
-                        {cell.events.map(evt => {
-                          if (evt.isRich) {
-                            return (
-                              <div key={evt.id} className="mt-1 bg-surface-container-lowest rounded-lg p-space-xs shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer border border-outline-variant/20 hover:border-primary/40">
-                                <div className="space-y-1">
-                                  <div className="flex items-center justify-between gap-1">
-                                    <span className="bg-surface-container text-on-surface-variant font-label-sm text-[10px] px-1.5 py-0.5 rounded font-medium">{evt.type}</span>
-                                    <span className="inline-flex items-center gap-1 bg-secondary-container/40 text-primary-container px-1.5 py-0.5 rounded-full font-label-sm text-[10px] font-semibold">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>Published
-                                    </span>
+                      return (
+                        <div key={idx} className={`min-h-calendar-cell-min-height ${cell.isToday ? 'bg-surface-container-low/60 ring-1 ring-primary/20 transition-all duration-150' : cell.isWeekend ? 'bg-surface-container-lowest/80' : 'bg-surface-container-lowest hover:bg-surface-container-lowest transition-all'} p-space-2xs flex flex-col justify-between group relative`}>
+                          <div className="flex items-center justify-between p-1">
+                            {cell.isToday ? (
+                              <>
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-bold shadow-sm">{cell.day}</span>
+                                <span className="font-label-sm text-[10px] uppercase font-bold text-primary tracking-wider">Today</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className={`font-label-md text-label-md ${cell.isWeekend ? 'text-on-surface-variant' : 'text-on-surface'} font-semibold`}>{cell.day}</span>
+                                {cell.events.length > 0 && <span className={`w-1.5 h-1.5 rounded-full ${cell.events[0].colorClass}`}></span>}
+                              </>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-1 mt-1 flex-1 flex flex-col">
+                            {cell.events.map(evt => {
+                              if (evt.isRich) {
+                                return (
+                                  <div key={evt.id} className="mt-1 bg-surface-container-lowest rounded-lg p-space-xs shadow-sm hover:shadow-md transition-all flex flex-col justify-between cursor-pointer border border-outline-variant/20 hover:border-primary/40">
+                                    <div className="space-y-1">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span className="bg-surface-container text-on-surface-variant font-label-sm text-[10px] px-1.5 py-0.5 rounded font-medium">{evt.type}</span>
+                                        <span className="inline-flex items-center gap-1 bg-secondary-container/40 text-primary-container px-1.5 py-0.5 rounded-full font-label-sm text-[10px] font-semibold">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>Published
+                                        </span>
+                                      </div>
+                                      <h4 className="font-title-sm text-[12px] leading-tight text-on-surface font-semibold line-clamp-2">{evt.title}</h4>
+                                    </div>
+                                    <div className="pt-2 mt-1 space-y-0.5">
+                                      <div className="flex items-center gap-1 text-on-surface-variant font-label-md text-[11px]">
+                                        <span className="material-symbols-outlined text-[13px]">schedule</span>
+                                        <span>{evt.time}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1 text-on-surface-variant font-body-sm text-[11px] truncate">
+                                        <span className="material-symbols-outlined text-[13px]">person</span>
+                                        <span className="truncate">{evt.instructor}</span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <h4 className="font-title-sm text-[12px] leading-tight text-on-surface font-semibold line-clamp-2">{evt.title}</h4>
-                                </div>
-                                <div className="pt-2 mt-1 space-y-0.5">
-                                  <div className="flex items-center gap-1 text-on-surface-variant font-label-md text-[11px]">
-                                    <span className="material-symbols-outlined text-[13px]">schedule</span>
-                                    <span>{evt.time}</span>
+                                );
+                              } else {
+                                return (
+                                  <div key={evt.id} className="px-1.5 py-1 bg-surface-container-low hover:bg-surface-container rounded text-on-surface text-[10px] font-medium truncate flex items-center gap-1 cursor-pointer transition-colors shadow-2xs">
+                                    <span className={`w-1.5 h-1.5 rounded-full ${evt.colorClass} flex-shrink-0`}></span>
+                                    <span className="truncate">{evt.title}</span>
                                   </div>
-                                  <div className="flex items-center gap-1 text-on-surface-variant font-body-sm text-[11px] truncate">
-                                    <span className="material-symbols-outlined text-[13px]">person</span>
-                                    <span className="truncate">{evt.instructor}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          } else {
-                            return (
-                              <div key={evt.id} className="px-1.5 py-1 bg-surface-container-low hover:bg-surface-container rounded text-on-surface text-[10px] font-medium truncate flex items-center gap-1 cursor-pointer transition-colors shadow-2xs">
-                                <span className={`w-1.5 h-1.5 rounded-full ${evt.colorClass} flex-shrink-0`}></span>
-                                <span className="truncate">{evt.title}</span>
-                              </div>
-                            );
-                          }
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                                );
+                              }
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              {activeView === 'Week' && renderWeekView()}
+              {activeView === 'Day' && renderDayView()}
+              {activeView === 'Agenda' && renderAgendaView()}
             </div>
 
             {/* Supportive Sidebar */}
