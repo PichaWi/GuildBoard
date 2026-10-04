@@ -3,8 +3,8 @@ from datetime import time
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from src.controllers.access import Action, can
 from src.controllers.auth import AuthenticatedUser
-from src.controllers.events import EVENT_CREATOR_ROLES
 from src.models.event import Event
 
 COURSE_COLOR_CLASSES = {
@@ -17,7 +17,7 @@ DEFAULT_COLOR_CLASS = "bg-primary-container"
 
 
 def can_view_drafts(user: AuthenticatedUser | None) -> bool:
-    return user is not None and user.role in EVENT_CREATOR_ROLES
+    return can(user, Action.VIEW_DRAFT_EVENTS)
 
 
 def list_events(
