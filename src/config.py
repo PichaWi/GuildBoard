@@ -37,6 +37,10 @@ class DerivedSettings:
     def google_oauth_configured(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret)
 
+    def frontend_url(self, path: str) -> str:
+        path = path if path.startswith("/") else f"/{path}"
+        base = self.frontend_base_url.strip().rstrip("/")
+        return f"{base}{path}" if base else path
 
 try:
     from pydantic_settings import BaseSettings
@@ -55,6 +59,7 @@ try:
         )
 
         allowed_email_domain: str = os.getenv("ALLOWED_EMAIL_DOMAIN", "ku.th")
+        frontend_base_url: str = os.getenv("FRONTEND_BASE_URL", "")
 
         # session cookie
         session_secret: str = os.getenv("SESSION_SECRET", "")
@@ -83,6 +88,7 @@ except ImportError:
             "GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/callback"
         )
         allowed_email_domain: str = os.getenv("ALLOWED_EMAIL_DOMAIN", "ku.th")
+        frontend_base_url: str = os.getenv("FRONTEND_BASE_URL", "")
         session_secret: str = os.getenv("SESSION_SECRET", "")
         dev_login_enabled: bool = _env_bool("DEV_LOGIN_ENABLED")
         demo_student_email: str = os.getenv("DEMO_STUDENT_EMAIL", "")
