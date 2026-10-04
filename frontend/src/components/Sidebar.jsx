@@ -16,6 +16,22 @@ export default function Sidebar() {
           </span>
         </div>
         <nav className="px-space-xs py-space-md space-y-space-2xs">
+          {['ta', 'lecturer'].includes(user?.role) && (
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all ${
+                  isActive
+                    ? 'bg-primary-container text-on-primary font-title-sm shadow-sm'
+                    : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+                }`
+              }
+            >
+              <span className="material-symbols-outlined text-[20px]">dashboard</span>
+              <span className="font-title-sm text-title-sm">Dashboard</span>
+            </NavLink>
+          )}
+
           <NavLink
             to="/calendar"
             className={({ isActive }) =>
@@ -30,7 +46,21 @@ export default function Sidebar() {
             <span className="font-title-sm text-title-sm">Course Calendar</span>
           </NavLink>
 
-          {user?.role === 'faculty' && (
+          <NavLink
+            to="/course-materials"
+            className={({ isActive }) =>
+              `flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all ${
+                isActive
+                  ? 'bg-primary-container text-on-primary font-title-sm shadow-sm'
+                  : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined text-[20px]">auto_stories</span>
+            <span className="font-title-sm text-title-sm">Course Materials</span>
+          </NavLink>
+
+          {user?.role === 'lecturer' && (
             <NavLink
               to="/create-event"
               className={({ isActive }) =>
@@ -46,26 +76,32 @@ export default function Sidebar() {
             </NavLink>
           )}
 
-          <a
-            href="#"
-            className="flex items-center gap-space-sm px-space-md py-space-xs rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all ${
+                isActive
+                  ? 'bg-primary-container text-on-primary font-title-sm shadow-sm'
+                  : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+              }`
+            }
           >
             <span className="material-symbols-outlined text-[20px]">settings</span>
             <span className="font-title-sm text-title-sm">Settings</span>
-          </a>
+          </NavLink>
         </nav>
       </div>
       <div className="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest">
         <div className="flex items-center gap-space-sm px-space-xs py-space-xs">
           <img
-            alt={user?.name || "Ryan Gosling"}
+            alt={user?.name || "Dr. Ryan Gosling"}
             className="w-8 h-8 rounded-full object-cover"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H"
           />
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="font-title-sm text-title-sm text-on-surface truncate">Ryan Gosling</span>
+            <span className="font-title-sm text-title-sm text-on-surface truncate">{user?.name || 'Dr. Ryan Gosling'}</span>
             <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
-              {user?.role === 'faculty' ? 'Faculty Instructor' : 'B.S. Software & Knowledge Engineering'}
+              {user?.role === 'lecturer' ? 'Faculty Instructor' : user?.role === 'ta' ? 'Teaching Assistant' : 'B.S. Software & Knowledge Engineering'}
             </span>
             <span className="text-[10px] text-on-surface-variant/70 opacity-50 tracking-wider font-mono italic select-none">
               literally me

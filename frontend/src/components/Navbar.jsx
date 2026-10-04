@@ -20,7 +20,7 @@ export default function Navbar({ leftContent }) {
           <span className="material-symbols-outlined text-[20px]">notifications</span>
         </button>
         <img
-          alt="Ryan Gosling"
+          alt="Dr. Ryan Gosling"
           className="w-8 h-8 rounded-full object-cover"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H"
         />
