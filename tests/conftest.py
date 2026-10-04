@@ -84,3 +84,39 @@ def login_as(client):
         return response.json()
 
     return _login
+
+
+class FakeGoogleClient:
+    """Stands in for Authlib's Google client so no request leaves the machine."""
+
+    def __init__(self, claims: dict | None = None, error: Exception | None = None) -> None:
+        self.claims = claims or {}
+        self.error = error
+        self.authorize_kwargs: dict = {}
+
+    async def authorize_redirect(self, request, redirect_uri, **kwargs):
+        from fastapi.responses import RedirectResponse
+
+        self.authorize_kwargs = kwargs
+        return RedirectResponse(
+            f"https://accounts.google.com/o/oauth2/v2/auth?redirect_uri={redirect_uri}",
+            status_code=302,
+        )
+
+    async def authorize_access_token(self, request):
+        if self.error:
+            raise self.error
+        return {"userinfo": self.claims}
+
+
+@pytest.fixture
+def google(monkeypatch):
+    """Replace the Google client; call it with the claims Google should return."""
+    from src.views import google_auth as google_auth_views
+
+    def _use(claims: dict | None = None, error: Exception | None = None) -> FakeGoogleClient:
+        fake = FakeGoogleClient(claims, error)
+        monkeypatch.setattr(google_auth_views, "google_client", lambda: fake)
+        return fake
+
+    return _use

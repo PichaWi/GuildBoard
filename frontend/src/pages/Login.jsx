@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoUrl from '../assets/logo.png';
+
+const OAUTH_ERROR_MESSAGES = {
+  ACCESS_DENIED_UNAUTHORIZED_DOMAIN:
+    'Access Denied: Unauthorized Domain. Sign in with your @ku.th university account.',
+  EMAIL_NOT_VERIFIED: 'Access Denied: Google has not verified this email address.',
+  OAUTH_EXCHANGE_FAILED: 'Google sign-in could not be completed. Please try again.',
+  OAUTH_NOT_CONFIGURED: 'Google sign-in is not configured on this server.',
+};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,6 +18,14 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Show why a Google sign-in was refused, then drop ?error= so a refresh does not show the same message again.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('error');
+    if (!code) return;
+    setError(OAUTH_ERROR_MESSAGES[code] || `Sign in failed (${code}).`);
+    navigate('/login', { replace: true });
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
