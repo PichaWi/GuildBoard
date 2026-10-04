@@ -27,6 +27,20 @@ export default function Login() {
     navigate('/login', { replace: true });
   }, [navigate]);
 
+  const handleMockLogin = (role) => {
+    if (role === 'ta') {
+      const taEmail = import.meta.env.VITE_TA_EMAIL;
+      const taPassword = import.meta.env.VITE_TA_PASSWORD;
+      console.log('TA Mock Login with env credentials:', { taEmail, taPassword });
+    }
+    login(role);
+    if (role === 'student') {
+      navigate('/calendar');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -46,14 +60,35 @@ export default function Login() {
       if (!response.ok) {
         throw new Error(result.detail || `Sign in failed (${response.status})`);
       }
-      login(result.role || ((email.includes('aj.') || email.includes('lecturer')) ? 'faculty' : 'student'));
-      navigate('/calendar');
+      const rawRole = String(result.role || '').toLowerCase();
+      let role = 'student';
+      if (rawRole === 'ta' || rawRole === 'teaching_assistant') role = 'ta';
+      else if (rawRole === 'lecturer' || rawRole === 'faculty' || rawRole === 'admin') role = 'lecturer';
+      else if (email.toLowerCase().includes('aj.') || email.toLowerCase().includes('lecturer')) role = 'lecturer';
+      else if (email.toLowerCase().includes('ta')) role = 'ta';
+
+      login(role);
+      if (role === 'student') {
+        navigate('/calendar');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       // If dev backend is unavailable or running standalone frontend demo, provide fallback
       if (email && password) {
-        const role = (email.includes('aj.') || email.includes('faculty') || email.includes('lecturer')) ? 'faculty' : 'student';
+        const lowerEmail = email.toLowerCase();
+        let role = 'student';
+        if (lowerEmail.includes('aj.') || lowerEmail.includes('faculty') || lowerEmail.includes('lecturer')) {
+          role = 'lecturer';
+        } else if (lowerEmail.includes('ta')) {
+          role = 'ta';
+        }
         login(role);
-        navigate('/calendar');
+        if (role === 'student') {
+          navigate('/calendar');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(err.message || 'Please enter valid credentials.');
         setIsLoading(false);
@@ -256,6 +291,41 @@ export default function Login() {
               </p>
             )}
           </form>
+
+          {/* Dev / Quick Mock Login */}
+          <div className="mt-space-md pt-space-md border-t border-outline-variant/30">
+            <div className="flex items-center justify-between mb-space-xs">
+              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+                Quick Demo Login
+              </span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-medium">
+                Dev Roles
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => handleMockLogin('student')}
+                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+              >
+                Login as Student
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMockLogin('ta')}
+                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+              >
+                Login as TA
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMockLogin('lecturer')}
+                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+              >
+                Login as Lecturer
+              </button>
+            </div>
+          </div>
 
           {/* Security Guarantee Notice */}
           <div className="mt-space-lg pt-space-md border-t border-outline-variant/20 text-center">
