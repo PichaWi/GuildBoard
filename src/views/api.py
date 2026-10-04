@@ -5,16 +5,15 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from src.controllers.access import Action, current_actor, require_permission
 from src.controllers.auth import (
     AuthenticatedUser,
     UserRole,
     authenticate_dev_user,
-    get_current_user,
 )
 from src.controllers.events import (
     EventValidationError,
     create_event,
-    ensure_can_create_events,
     validate_event_payload,
 )
 from src.database import get_db
@@ -75,7 +74,7 @@ def dev_login(payload: DevLoginRequest, request: Request) -> CurrentUserRead:
     response_model=CurrentUserRead,
     summary="Return the authenticated session identity",
 )
-def get_me(user: Annotated[AuthenticatedUser, Depends(get_current_user)]) -> CurrentUserRead:
+def get_me(user: Annotated[AuthenticatedUser, Depends(current_actor)]) -> CurrentUserRead:
     return _user_response(user)
 
 
@@ -98,11 +97,10 @@ def get_me(user: Annotated[AuthenticatedUser, Depends(get_current_user)]) -> Cur
     },
 )
 def post_event(
-    user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    user: Annotated[AuthenticatedUser, Depends(require_permission(Action.CREATE_EVENT))],
     raw_payload: Annotated[Any, Depends(read_event_payload)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    ensure_can_create_events(user)
     try:
         payload = validate_event_payload(raw_payload)
     except EventValidationError as error:
