@@ -9,6 +9,9 @@ from src.models.user import User
 
 
 class RoleAssignmentError(ValueError):
+    """Raised when a role cannot be assigned to a user."""
+
+
 def normalize_email(email: str) -> str:
     return email.strip().lower()
 
