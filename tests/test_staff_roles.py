@@ -91,3 +91,24 @@ def test_google_student_cannot_create_an_event(client, google, session_factory):
     assert response.status_code == 403
     with session_factory() as db:
         assert db.query(Event).count() == 0
+
+
+@pytest.mark.parametrize("role", ["TA", "Admin"])
+def test_staff_can_open_one_draft_by_id(client, google, session_factory, role):
+    draft_id = add_draft_event(session_factory)
+    sign_in_with_google(client, google, session_factory, "staff@ku.th", role)
+
+    response = client.get(f"/api/events/{draft_id}")
+
+    assert response.status_code == 200
+    assert response.json()["title"] == "Draft: lab prep"
+
+
+def test_google_student_gets_404_for_a_draft_id(client, google, session_factory):
+    # Students get 404 (not 403) so they can't tell the draft exists.
+    draft_id = add_draft_event(session_factory)
+    sign_in_with_google(client, google, session_factory, "student@ku.th", "Student")
+
+    response = client.get(f"/api/events/{draft_id}")
+
+    assert response.status_code == 404
