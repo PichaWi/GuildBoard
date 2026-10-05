@@ -60,3 +60,34 @@ def test_google_student_cannot_see_drafts_in_the_feed(client, google, session_fa
     response = client.get("/api/events?include_drafts=true")
 
     assert response.status_code == 403
+
+
+NEW_EVENT = {
+    "title": "TA Office Hour",
+    "course_code": "ISP",
+    "event_type": "Lab",
+    "event_date": "2026-10-21",
+    "start_time": "13:00",
+    "end_time": "14:00",
+}
+
+
+@pytest.mark.parametrize("role", ["TA", "Admin"])
+def test_staff_can_create_an_event(client, google, session_factory, role):
+    sign_in_with_google(client, google, session_factory, "staff@ku.th", role)
+
+    response = client.post("/api/events", json=NEW_EVENT)
+
+    assert response.status_code == 201
+    # The saved role comes from the login, not from the request.
+    assert response.json()["created_by_role"] == role
+
+
+def test_google_student_cannot_create_an_event(client, google, session_factory):
+    sign_in_with_google(client, google, session_factory, "student@ku.th", "Student")
+
+    response = client.post("/api/events", json=NEW_EVENT)
+
+    assert response.status_code == 403
+    with session_factory() as db:
+        assert db.query(Event).count() == 0
