@@ -89,6 +89,48 @@ npm run dev
 
 The React app will be running at `http://localhost:5173/` and proxies backend `/api` requests to `http://localhost:8000/`.
 
+---
+
+## Docker Deployment
+
+### Prerequisites
+- Docker Engine & Docker Compose v2+
+- Create your `.env` file from `.env.example`:
+  ```sh
+  cp .env.example .env
+  ```
+
+### Running with Docker Compose
+Build and launch all services (Frontend, Backend, and PostgreSQL database):
+```sh
+docker compose up --build
+```
+Or run in detached mode in the background:
+```sh
+docker compose up --build -d
+```
+To stop the services:
+```sh
+docker compose down
+```
+
+### Services & Port Mappings
+| Service | Internal Port | Host URL / Port | Description |
+|---|---|---|---|
+| **Frontend** | `80` (Nginx) | [`http://localhost:3000`](http://localhost:3000) | React SPA with client-side routing fallback & reverse proxy |
+| **Backend** | `8000` (Uvicorn) | [`http://localhost:8000`](http://localhost:8000) | FastAPI REST API & Google OAuth endpoints |
+| **Database** | `5432` (Postgres) | `localhost:5432` | PostgreSQL persistent database (`postgres:16-alpine`) |
+
+### Switching Mock Data Mode (`VITE_USE_MOCK`)
+You can toggle between client-side mock datasets and live API integration:
+1. Update `VITE_USE_MOCK` in your `.env` file:
+   - **Live Backend Mode:** `VITE_USE_MOCK=false`
+   - **Offline Mock Mode:** `VITE_USE_MOCK=true`
+2. Rebuild and restart the container stack:
+   ```sh
+   docker compose up --build frontend
+   ```
+
 ## Event API integration
 
 The current iteration exposes `POST /api/events` for the Create Event form and
