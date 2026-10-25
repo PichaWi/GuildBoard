@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: smoke_user
+      POSTGRES_PASSWORD: smoke_password
+      POSTGRES_DB: smoke_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smoke_user -d smoke_db"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://smoke_user:smoke_password@db:5432/smoke_db
+      ENVIRONMENT: test
+      SESSION_SECRET: guildboard-docker-smoke-session-secret-2026-only
+      FRONTEND_BASE_URL: ""
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Use Python from the application image, so readiness tests the real API.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=2).read()"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
