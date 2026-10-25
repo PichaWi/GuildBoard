@@ -20,7 +20,10 @@ cleanup() {
     "${compose[@]}" logs --no-color >&2
   fi
   # The unique project name limits cleanup to resources created by this run.
-  "${compose[@]}" down --volumes --remove-orphans >/dev/null
+  if ! "${compose[@]}" down --volumes --remove-orphans >/dev/null; then
+    echo "Cleanup failed for ${project}; check its remaining Docker resources." >&2
+    status=1
+  fi
   exit "${status}"
 }
 trap cleanup EXIT
