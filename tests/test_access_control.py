@@ -44,6 +44,7 @@ DESIGNED = {
     Action.VIEW_TICKETS: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
     Action.CREATE_TICKET: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
     Action.UPDATE_TICKET: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
+    Action.VIEW_AT_RISK: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
 }
 
 
