@@ -17,6 +17,7 @@ class Action(str, Enum):
     VIEW_TICKETS = "view_tickets"
     CREATE_TICKET = "create_ticket"
     UPDATE_TICKET = "update_ticket"
+    VIEW_AT_RISK = "view_at_risk"
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,10 @@ PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.UPDATE_TICKET: Rule(
         roles=_STAFF,
         denied_detail="Students are not permitted to update tickets.",
+    ),
+    Action.VIEW_AT_RISK: Rule(
+        roles=_STAFF,
+        denied_detail="Only Lecturers, TAs and Admins can view at-risk items.",
     ),
 }
 
