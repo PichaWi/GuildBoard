@@ -41,6 +41,9 @@ VALID_EVENT = {
 DESIGNED = {
     Action.VIEW_DRAFT_EVENTS: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
     Action.CREATE_EVENT: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
+    Action.VIEW_TICKETS: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
+    Action.CREATE_TICKET: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
+    Action.UPDATE_TICKET: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
 }
 
 
@@ -297,12 +300,14 @@ def test_every_write_endpoint_rejects_a_caller_who_is_not_signed_in(client):
         for method in operations:
             if method not in {"post", "put", "patch", "delete"} or (path, method) in public:
                 continue
-            url = path.replace("{event_id}", "1")
+            url = path.replace("{event_id}", "1").replace("{ticket_id}", "1")
             response = client.request(method.upper(), url, json={})
             assert response.status_code == 401, f"{method.upper()} {path} is not protected"
             checked.append((path, method))
 
     assert ("/api/events", "post") in checked
+    assert ("/api/tickets", "post") in checked
+    assert ("/api/tickets/{ticket_id}", "patch") in checked
 
 
 # --- Drafts follow the same stored role ----------------------------------------
