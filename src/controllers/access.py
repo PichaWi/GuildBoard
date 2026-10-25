@@ -14,6 +14,10 @@ from src.database import get_db
 class Action(str, Enum):
     VIEW_DRAFT_EVENTS = "view_draft_events"
     CREATE_EVENT = "create_event"
+    VIEW_TICKETS = "view_tickets"
+    CREATE_TICKET = "create_ticket"
+    UPDATE_TICKET = "update_ticket"
+    VIEW_AT_RISK = "view_at_risk"
 
 
 @dataclass(frozen=True)
@@ -32,6 +36,22 @@ PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.CREATE_EVENT: Rule(
         roles=_STAFF,
         denied_detail="Students are not permitted to create events.",
+    ),
+    Action.VIEW_TICKETS: Rule(
+        roles=_STAFF,
+        denied_detail="Only Lecturers, TAs and Admins can view tickets.",
+    ),
+    Action.CREATE_TICKET: Rule(
+        roles=_STAFF,
+        denied_detail="Students are not permitted to create tickets.",
+    ),
+    Action.UPDATE_TICKET: Rule(
+        roles=_STAFF,
+        denied_detail="Students are not permitted to update tickets.",
+    ),
+    Action.VIEW_AT_RISK: Rule(
+        roles=_STAFF,
+        denied_detail="Only Lecturers, TAs and Admins can view at-risk items.",
     ),
 }
 
