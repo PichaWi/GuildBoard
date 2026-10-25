@@ -42,7 +42,7 @@ logs before cleanup to help identify the failed service.
 
 This is a container smoke test, not a browser test. It does not test real Google
 sign-in, React interactions, production credentials, or event creation. The test
-Compose file reuses the production images but has its own settings, so it does
+Compose file reuses the production Dockerfiles but has its own settings, so it does
 not certify every setting in the root `docker-compose.yml`.
 
 ## Backend dependency check
@@ -98,3 +98,17 @@ The cleanup exit status was also checked separately with simulated command
 results: a failed check or failed cleanup returns nonzero. No backend code,
 requirements, production Compose settings, or developer environment files were
 changed for this test.
+
+## Review follow-up: frontend readiness
+
+A separate check of the built frontend image found that `wget --spider
+http://localhost/` returned connection refused, while the same request to
+`http://127.0.0.1/` passed. The image's Nginx config listens on IPv4; using
+`localhost` lets wget choose IPv6. The test healthcheck now uses `127.0.0.1`
+to avoid reporting an unhealthy frontend for that reason.
+
+This check ran only Nginx in a temporary container, with the `backend` hostname
+mapped to loopback so Nginx could load its config. No real backend was available
+in that check, so it does not verify API proxying. The temporary container was
+removed afterward. The full-stack result above remains blocked by the missing
+Python driver.
