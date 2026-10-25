@@ -17,12 +17,13 @@ export function AuthProvider({ children }) {
         const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
         if (res.ok) {
           const data = await res.json();
-          // Map backend role to our 3-way role: student | ta | lecturer
+          // Map backend role: student | ta | lecturer | admin
           const rawRole = String(data.role || '').toLowerCase();
           let role = 'student';
           if (rawRole === 'ta' || rawRole === 'teaching_assistant') role = 'ta';
-          else if (rawRole === 'lecturer' || rawRole === 'faculty' || rawRole === 'admin') role = 'lecturer';
-          const sessionUser = { role, name: data.name || 'Dr. Ryan Gosling', email: data.email };
+          else if (rawRole === 'lecturer' || rawRole === 'faculty') role = 'lecturer';
+          else if (rawRole === 'admin') role = 'admin';
+          const sessionUser = { role, name: data.name || 'User', email: data.email || '' };
           setUser(sessionUser);
           localStorage.setItem('guildboard_user', JSON.stringify(sessionUser));
         }
@@ -37,11 +38,21 @@ export function AuthProvider({ children }) {
 
   /**
    * Mock / dev login.
-   * @param {'student' | 'ta' | 'lecturer'} role
+   * @param {'student' | 'ta' | 'lecturer' | 'admin'} role
    */
   const login = (role) => {
     const normalizedRole = String(role).toLowerCase();
-    const userData = { role: normalizedRole, name: 'Dr. Ryan Gosling' };
+    const roleLabels = {
+      lecturer: 'Lecturer User',
+      ta: 'TA User',
+      admin: 'Admin User',
+      student: 'Student User',
+    };
+    const userData = {
+      role: normalizedRole,
+      name: roleLabels[normalizedRole] || 'User',
+      email: `${normalizedRole}@ku.th`,
+    };
     setUser(userData);
     localStorage.setItem('guildboard_user', JSON.stringify(userData));
   };

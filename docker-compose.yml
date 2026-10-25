@@ -1,16 +1,53 @@
-version: "3.8"
-
 services:
-  web:
+  # ─── React Frontend (Vite + Nginx) ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_USE_MOCK=${VITE_USE_MOCK:-false}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ─── FastAPI Backend ────────────────────────────────────────────────────────
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./static:/app/static
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
     env_file:
       - .env
+    environment:
+      - PORT=8000
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/guildboard}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
+
+  # ─── PostgreSQL Database ────────────────────────────────────────────────────
+  # Detected from backend configuration (SQLAlchemy + psycopg2-binary)
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-guildboard}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-guildboard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -10,11 +10,11 @@ import OperationsDashboard from './pages/OperationsDashboard';
  * ProtectedRoute — gates access based on authentication + optional role checks.
  *
  * @param {React.ReactNode} children
- * @param {boolean}         [requireFaculty]     — if true, only lecturer role may access
- * @param {string[]}        [allowedRoles]       — explicit allow-list (e.g. ['ta','lecturer'])
+ * @param {boolean}         [requireStaff]       — if true, only ta, lecturer, and admin may access
+ * @param {string[]}        [allowedRoles]       — explicit allow-list (e.g. ['ta','lecturer','admin'])
  * @param {string}          [redirectTo='/login'] — where to send unauthorised users
  */
-const ProtectedRoute = ({ children, requireFaculty, allowedRoles, redirectTo }) => {
+const ProtectedRoute = ({ children, requireStaff, allowedRoles, redirectTo }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -26,14 +26,19 @@ const ProtectedRoute = ({ children, requireFaculty, allowedRoles, redirectTo }) 
     return <Navigate to="/login" replace />;
   }
 
-  // Legacy prop: only lecturers can access
-  if (requireFaculty && user.role !== 'lecturer') {
+  const userRole = String(user.role || '').toLowerCase();
+
+  // requireStaff: ta, lecturer, and admin can access; students redirected to /calendar
+  if (requireStaff && !['ta', 'lecturer', 'admin'].includes(userRole)) {
     return <Navigate to="/calendar" replace />;
   }
 
-  // Role allow-list: redirect disallowed roles
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={redirectTo || '/calendar'} replace />;
+  // Role allow-list: redirect disallowed roles (compare case-insensitively)
+  if (allowedRoles) {
+    const normalizedAllowed = allowedRoles.map((r) => String(r).toLowerCase());
+    if (!normalizedAllowed.includes(userRole)) {
+      return <Navigate to={redirectTo || '/calendar'} replace />;
+    }
   }
 
   return children;
@@ -45,11 +50,11 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
 
-      {/* /dashboard — TA and Lecturer only; students get kicked to /calendar */}
+      {/* /dashboard — TA, Lecturer, and Admin; students get kicked to /calendar */}
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['ta', 'lecturer']} redirectTo="/calendar">
+          <ProtectedRoute allowedRoles={['ta', 'lecturer', 'admin']} redirectTo="/calendar">
             <OperationsDashboard />
           </ProtectedRoute>
         }
@@ -67,7 +72,7 @@ function AppRoutes() {
       <Route
         path="/create-event"
         element={
-          <ProtectedRoute requireFaculty={true}>
+          <ProtectedRoute requireStaff={true}>
             <CreateEvent />
           </ProtectedRoute>
         }
