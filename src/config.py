@@ -28,9 +28,15 @@ class DerivedSettings:
     @property
     def sqlalchemy_url(self) -> str:
         if self.database_url:
-            if self.database_url.startswith("postgres://"):
-                return self.database_url.replace("postgres://", "postgresql://", 1)
-            return self.database_url
+            url = self.database_url
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            # SQLAlchemy 2.1 defaults "postgresql://" to the psycopg 3 driver, but
+            # requirements.txt installs psycopg2, so name the driver explicitly.
+            # (See Project_documents/QA_Docker_Smoke.md.)
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+            return url
         return f"sqlite:///{os.path.join(os.getcwd(), 'guildboard.db')}"
 
     @property

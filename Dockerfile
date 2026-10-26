@@ -24,6 +24,9 @@ RUN groupadd -g 1000 appgroup && \
 # Copy application source code and static assets
 COPY --chown=appuser:appgroup src/ /app/src/
 COPY --chown=appuser:appgroup static/ /app/static/
+COPY --chown=appuser:appgroup alembic.ini /app/alembic.ini
+COPY --chown=appuser:appgroup migrations/ /app/migrations/
+COPY --chown=appuser:appgroup scripts/ /app/scripts/
 
 # Set working directory permissions
 RUN chown -R appuser:appgroup /app
@@ -34,4 +37,5 @@ USER appuser
 EXPOSE 8000
 
 # Entrypoint for FastAPI application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Bring the database schema up to date (Alembic), then start FastAPI
+CMD ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"]

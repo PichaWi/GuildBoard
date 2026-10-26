@@ -26,6 +26,13 @@ def get_db() -> Iterator[Session]:
 
 
 def init_db() -> None:
-    from src import models  # Create tables
+    """Create tables automatically only for the local SQLite fallback.
 
-    Base.metadata.create_all(bind=engine)
+    PostgreSQL is managed by Alembic migrations (`alembic upgrade head`); the
+    Docker image runs them before starting the app. Mixing create_all with
+    migrations makes Alembic fail with "table already exists".
+    """
+    from src import models  # noqa: F401  (registers every table on Base)
+
+    if engine.url.get_backend_name() == "sqlite":
+        Base.metadata.create_all(bind=engine)

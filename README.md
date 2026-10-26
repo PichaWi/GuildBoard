@@ -131,6 +131,27 @@ You can toggle between client-side mock datasets and live API integration:
    docker compose up --build frontend
    ```
 
+## Database (PostgreSQL + Alembic)
+
+Tables (users, events, tickets, consultation_sessions, course_materials) are
+created by **Alembic** migrations in `migrations/`. ER diagram:
+`Diagrams/Database_ER_Diagram.md`.
+
+- **Whole app in Docker:** `docker compose up --build`. The backend container runs
+  `alembic upgrade head` before starting, so the tables are always up to date.
+- **One-click (Windows), database only:** start Docker Desktop, run `setup.bat`
+  once, then double-click `setup_database.bat` (starts PostgreSQL, creates the
+  tables, adds demo data). Then set in `.env`:
+  `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/guildboard`
+- **Manual:** `docker compose up -d db`, then `alembic upgrade head`, then
+  `python scripts/seed_data.py`.
+- **Changing the schema:** edit the model in `src/models/`, run
+  `alembic revision --autogenerate -m "what changed"`, check the new file in
+  `migrations/versions/`, then `alembic upgrade head`. Never edit tables by hand.
+
+If `DATABASE_URL` is empty the app uses a local SQLite file (`guildboard.db`) and
+creates tables automatically; tests always use in-memory SQLite.
+
 ## Event API integration
 
 The current iteration exposes `POST /api/events` for the Create Event form and
