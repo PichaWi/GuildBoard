@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
-import { calendarEvents, upcomingDeadlinesList, monthNames } from '../mock/calendarData';
+import { monthNames } from '../mock/calendarData';
 import { formatDateKey, getWeekStart, generateICS } from '../components/calendar/calendarUtils';
 import MonthView from '../components/calendar/MonthView';
 import WeekView from '../components/calendar/WeekView';
@@ -8,6 +8,7 @@ import DayView from '../components/calendar/DayView';
 import AgendaView from '../components/calendar/AgendaView';
 import UpcomingDeadlines from '../components/calendar/UpcomingDeadlines';
 import CourseFilter from '../components/calendar/CourseFilter';
+import { getEvents } from '../api/events';
 
 export default function Calendar() {
   const now = new Date();
@@ -17,9 +18,32 @@ export default function Calendar() {
   const [activeView, setActiveView] = useState('Month');
   // For week/day navigation
   const [selectedDate, setSelectedDate] = useState(new Date(now));
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
+
+  // ── Data Fetching ────────────────────────────────────────────────────────────
+
+  const fetchEvents = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await getEvents();
+      setEvents(data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Failed to fetch events:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   // Navigation handlers
   const prevMonth = () => {
@@ -72,7 +96,7 @@ export default function Calendar() {
     }
     setActiveCourses(newSet);
   };
-  
+
   const toggleAllCourses = () => {
     if (activeCourses.size === 4) {
       setActiveCourses(new Set());
@@ -83,7 +107,7 @@ export default function Calendar() {
 
   // Export handler
   const handleExport = () => {
-    const filtered = calendarEvents.filter((e) => activeCourses.has(e.course));
+    const filtered = events.filter((e) => activeCourses.has(e.course));
     const icsContent = generateICS(filtered);
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -103,7 +127,7 @@ export default function Calendar() {
   const totalCellsNeeded = (firstDayOfWeek + daysInMonth > 35) ? 42 : 35;
 
   const calendarCells = [];
-  
+
   // 1. Previous Month Overflow
   for (let i = firstDayOfWeek - 1; i >= 0; i--) {
     calendarCells.push({
@@ -111,15 +135,15 @@ export default function Calendar() {
       day: daysInPrevMonth - i,
     });
   }
-  
+
   // 2. Current Month
   for (let day = 1; day <= daysInMonth; day++) {
     const dateKey = formatDateKey(currentYear, currentMonth, day);
-    const dayEvents = calendarEvents.filter((e) => e.date === dateKey && activeCourses.has(e.course));
+    const dayEvents = events.filter((e) => e.date === dateKey && activeCourses.has(e.course));
     const isToday = (currentYear === todayDate.getFullYear() && currentMonth === todayDate.getMonth() && day === todayDate.getDate());
     const dayOfWeekIndex = (firstDayOfWeek + day - 1) % 7;
     const isWeekend = (dayOfWeekIndex === 5 || dayOfWeekIndex === 6);
-    
+
     calendarCells.push({
       type: 'current',
       day,
@@ -129,7 +153,7 @@ export default function Calendar() {
       isWeekend,
     });
   }
-  
+
   // 3. Next Month Overflow
   const remainingCells = totalCellsNeeded - (firstDayOfWeek + daysInMonth);
   for (let nextDay = 1; nextDay <= remainingCells; nextDay++) {
@@ -139,7 +163,16 @@ export default function Calendar() {
     });
   }
 
-  const filteredDeadlines = upcomingDeadlinesList.filter((d) => activeCourses.has(d.course));
+  const filteredDeadlines = events
+    .filter((e) => activeCourses.has(e.course))
+    .slice(0, 4)
+    .map(e => ({
+      course: e.course,
+      title: e.title,
+      due: `${e.date} · ${e.time}`,
+      instructor: e.instructor,
+      colorClass: e.colorClass || 'bg-primary-container',
+    }));
 
   // ─── Navigation label per view ─────────────────────────────
   const getViewNavigationLabel = () => {
@@ -175,11 +208,22 @@ export default function Calendar() {
     </nav>
   );
 
+  if (isLoading) {
+    return (
+      <Layout navbarLeftContent={navbarLeftContent}>
+        <div className="flex flex-col items-center justify-center p-space-2xl min-h-[60vh]">
+          <span className="material-symbols-outlined text-primary text-[40px] animate-spin mb-2">progress_activity</span>
+          <h2 className="font-title-md text-title-md text-on-surface">Loading Calendar...</h2>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout navbarLeftContent={navbarLeftContent}>
       <div className="flex flex-col w-full pb-space-2xl">
         <div className="p-space-lg max-w-[1720px] mx-auto w-full space-y-space-lg">
-          
+
           {/* Header Control Band */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest p-space-md rounded-xl shadow-sm border border-outline-variant/20">
             <div className="flex flex-wrap items-center gap-space-sm">
@@ -238,6 +282,13 @@ export default function Calendar() {
             </div>
           </div>
 
+          {error && (
+            <div className="mb-space-md p-space-md rounded-xl bg-error-container/40 text-on-error-container border border-error-container text-body-sm flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px]">error</span>
+              <span>Failed to load calendar: {error}. <button onClick={fetchEvents} className="underline hover:text-primary cursor-pointer ml-2">Retry</button></span>
+            </div>
+          )}
+
           {/* Main Workspace Layout */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
             {/* Calendar Area (Left 9 cols) */}
@@ -247,7 +298,7 @@ export default function Calendar() {
                 <WeekView
                   selectedDate={selectedDate}
                   todayDate={todayDate}
-                  calendarEvents={calendarEvents}
+                  calendarEvents={events}
                   activeCourses={activeCourses}
                 />
               )}
@@ -255,14 +306,14 @@ export default function Calendar() {
                 <DayView
                   selectedDate={selectedDate}
                   todayDate={todayDate}
-                  calendarEvents={calendarEvents}
+                  calendarEvents={events}
                   activeCourses={activeCourses}
                   monthNames={monthNames}
                 />
               )}
               {activeView === 'Agenda' && (
                 <AgendaView
-                  calendarEvents={calendarEvents}
+                  calendarEvents={events}
                   activeCourses={activeCourses}
                   todayDate={todayDate}
                   monthNames={monthNames}

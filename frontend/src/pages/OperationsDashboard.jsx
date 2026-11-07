@@ -1,19 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
-import { INITIAL_SUMMARY_CARDS, INITIAL_TICKETS, AT_RISK_STUDENTS } from '../mock/operationsData';
+import { INITIAL_SUMMARY_CARDS } from '../mock/operationsData';
 import OperationsTabs from '../components/operations/OperationsTabs';
 import KPICards from '../components/operations/KPICards';
 import TicketRow from '../components/operations/TicketRow';
 import AtRiskRow from '../components/operations/AtRiskRow';
 import CreateTicketModal from '../components/operations/CreateTicketModal';
 import Toast from '../components/operations/Toast';
+import { getInitials, PriorityBadge, StatusBadge } from '../components/operations/Badges';
+import { getTickets, createTicket as apiCreateTicket, updateTicket as apiUpdateTicket } from '../api/tickets';
+import { getAtRisk } from '../api/atRisk';
+import { DEFAULTS } from '../config/appConfig';
 
 export default function OperationsDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const userRole = String(user?.role || 'lecturer').toLowerCase();
+  const userRole = String(user?.role || 'student').toLowerCase();
 
   // Tab state: 'tickets' | 'atrisk'
   const [activeTab, setActiveTab] = useState('tickets');
@@ -28,10 +32,16 @@ export default function OperationsDashboard() {
   const isLecturer = ['lecturer', 'admin'].includes(userRole);
   const effectiveTab = isLecturer ? activeTab : 'tickets';
 
-  // Ticket data state (decoupled for easy backend swap)
-  const [tickets, setTickets] = useState(INITIAL_TICKETS);
+  // Ticket data state
+  const [tickets, setTickets] = useState([]);
   const [summaryCards] = useState(INITIAL_SUMMARY_CARDS);
-  const [atRiskStudents] = useState(AT_RISK_STUDENTS);
+  const [atRiskStudents, setAtRiskStudents] = useState([]);
+
+  // Loading states
+  const [isLoadingTickets, setIsLoadingTickets] = useState(true);
+  const [isLoadingAtRisk, setIsLoadingAtRisk] = useState(true);
+  const [ticketsError, setTicketsError] = useState(null);
+  const [atRiskError, setAtRiskError] = useState(null);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +54,42 @@ export default function OperationsDashboard() {
   // Toast state
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
+
+  // ── Data Fetching ────────────────────────────────────────────────────────────
+
+  const fetchTickets = useCallback(async () => {
+    try {
+      setIsLoadingTickets(true);
+      setTicketsError(null);
+      const data = await getTickets(statusFilter === 'All' ? null : statusFilter);
+      setTickets(data);
+    } catch (err) {
+      setTicketsError(err.message);
+      console.error('Failed to fetch tickets:', err);
+    } finally {
+      setIsLoadingTickets(false);
+    }
+  }, [statusFilter]);
+
+  const fetchAtRisk = useCallback(async () => {
+    try {
+      setIsLoadingAtRisk(true);
+      setAtRiskError(null);
+      const data = await getAtRisk();
+      setAtRiskStudents(data);
+    } catch (err) {
+      setAtRiskError(err.message);
+      console.error('Failed to fetch at-risk students:', err);
+    } finally {
+      setIsLoadingAtRisk(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    fetchTickets();
+    if (isLecturer) fetchAtRisk();
+  }, [fetchTickets, fetchAtRisk, isLecturer]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -65,26 +111,38 @@ export default function OperationsDashboard() {
   const activeTicketCount = tickets.filter((t) => t.status !== 'Closed').length;
   const highPriorityCount = tickets.filter((t) => t.priority === 'High' && t.status !== 'Closed').length;
 
-  const handleToggleStatus = (id) => {
-    setTickets((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        const next = t.status === 'Open' ? 'In-Progress' : t.status === 'In-Progress' ? 'Closed' : 'Open';
-        showToast(`Ticket status changed to ${next}`);
-        return { ...t, status: next };
-      })
-    );
+  const handleToggleStatus = async (id) => {
+    const ticket = tickets.find(t => t.id === id);
+    if (!ticket) return;
+    const next = ticket.status === 'Open' ? 'In-Progress' : ticket.status === 'In-Progress' ? 'Closed' : 'Open';
+    try {
+      await apiUpdateTicket(id, { status: next });
+      setTickets((prev) => prev.map((t) => (t.id !== id ? t : { ...t, status: next })));
+      showToast(`Ticket status changed to ${next}`);
+    } catch (err) {
+      showToast(`Failed to update status: ${err.message}`);
+    }
   };
 
-  const handleDeleteTicket = (id) => {
-    setTickets((prev) => prev.filter((t) => t.id !== id));
-    showToast('Ticket removed from tracking register');
+  const handleDeleteTicket = async (id) => {
+    try {
+      // Backend doesn't have DELETE endpoint yet, so optimistic update
+      setTickets((prev) => prev.filter((t) => t.id !== id));
+      showToast('Ticket removed from tracking register');
+    } catch (err) {
+      showToast(`Failed to delete: ${err.message}`);
+    }
   };
 
-  const handleCreateTicket = (newTicket) => {
-    setTickets((prev) => [newTicket, ...prev]);
-    setIsModalOpen(false);
-    showToast('New instructional ticket created successfully');
+  const handleCreateTicket = async (newTicket) => {
+    try {
+      const created = await apiCreateTicket(newTicket);
+      setTickets((prev) => [created, ...prev]);
+      setIsModalOpen(false);
+      showToast('New instructional ticket created successfully');
+    } catch (err) {
+      showToast(`Failed to create ticket: ${err.message}`);
+    }
   };
 
   const handleAtRiskAction = (type, studentName) => {
@@ -131,7 +189,7 @@ export default function OperationsDashboard() {
                 <span className="text-label-sm font-label-sm text-on-surface-variant">• Term Week 8</span>
               </div>
               <h1 className="text-headline-xl font-headline-xl text-primary tracking-tight">
-                Academic Operations &amp; Triage
+                Academic Operations & Triage
               </h1>
               <p className="text-body-md font-body-md text-on-surface-variant mt-1">
                 Cross-course task assignments, cohort risk telemetry, and teaching assistant workflows.
@@ -148,11 +206,37 @@ export default function OperationsDashboard() {
             />
           </div>
 
+          {/* Loading States */}
+          {effectiveTab === 'tickets' && isLoadingTickets && (
+            <div className="p-space-2xl text-center bg-surface-container-lowest rounded-xl shadow-sm">
+              <span className="material-symbols-outlined text-primary text-[36px] animate-spin mb-2 block">progress_activity</span>
+              <span className="text-title-md font-title-md text-on-surface">Loading tickets...</span>
+            </div>
+          )}
+          {effectiveTab === 'atrisk' && isLoadingAtRisk && (
+            <div className="p-space-2xl text-center bg-surface-container-lowest rounded-xl shadow-sm">
+              <span className="material-symbols-outlined text-primary text-[36px] animate-spin mb-2 block">progress_activity</span>
+              <span className="text-title-md font-title-md text-on-surface">Loading at-risk monitor...</span>
+            </div>
+          )}
+
+          {/* Error States */}
+          {effectiveTab === 'tickets' && ticketsError && !isLoadingTickets && (
+            <div className="mb-space-md p-space-md rounded-xl bg-error-container/40 text-on-error-container border border-error-container text-body-sm">
+              Failed to load tickets: {ticketsError}. <button onClick={fetchTickets} className="underline hover:text-primary cursor-pointer">Retry</button>
+            </div>
+          )}
+          {effectiveTab === 'atrisk' && atRiskError && !isLoadingAtRisk && (
+            <div className="mb-space-md p-space-md rounded-xl bg-error-container/40 text-on-error-container border border-error-container text-body-sm">
+              Failed to load at-risk data: {atRiskError}. <button onClick={fetchAtRisk} className="underline hover:text-primary cursor-pointer">Retry</button>
+            </div>
+          )}
+
           {/* ── KPI Summary Cards ───────────────────────────────────────────────── */}
-          <KPICards cards={displayCards} />
+          {!isLoadingTickets && <KPICards cards={displayCards} />}
 
           {/* ── VIEW 1: TA Ticket Tracking ──────────────────────────────────────── */}
-          {effectiveTab === 'tickets' && (
+          {effectiveTab === 'tickets' && !isLoadingTickets && (
             <section className="flex flex-col w-full space-y-space-md" id="view-tickets">
               {/* Filter Bar */}
               <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-space-md">
@@ -181,7 +265,9 @@ export default function OperationsDashboard() {
                     <select
                       className="h-[38px] px-space-sm rounded-lg bg-surface-container-low text-on-surface text-body-md font-body-md focus:outline-none cursor-pointer"
                       id="ticket-filter-status"
-                      onChange={(e) => setStatusFilter(e.target.value)}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                      }}
                       value={statusFilter}
                     >
                       <option value="All">All Statuses</option>
@@ -228,7 +314,7 @@ export default function OperationsDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm uppercase tracking-wider">
-                        <th className="py-space-sm px-space-lg">Task Title &amp; Details</th>
+                        <th className="py-space-sm px-space-lg">Task Title & Details</th>
                         <th className="py-space-sm px-space-md">Assigned Owner</th>
                         <th className="py-space-sm px-space-md">Priority</th>
                         <th className="py-space-sm px-space-md">Status</th>
@@ -278,7 +364,7 @@ export default function OperationsDashboard() {
                                 <div className="flex flex-col min-w-0">
                                   <span className="font-title-sm text-title-sm text-on-surface truncate">{ticket.owner}</span>
                                   <span className="text-label-sm font-label-sm text-on-surface-variant truncate">
-                                    {ticket.ownerRole || 'Academic Staff'}
+                                    {ticket.ownerRole || DEFAULTS.ownerRole}
                                   </span>
                                 </div>
                               </div>
@@ -324,7 +410,7 @@ export default function OperationsDashboard() {
           )}
 
           {/* ── VIEW 2: Lecturer At-Risk Monitor ────────────────────────────────── */}
-          {effectiveTab === 'atrisk' && isLecturer && (
+          {effectiveTab === 'atrisk' && isLecturer && !isLoadingAtRisk && (
             <section className="flex flex-col w-full space-y-space-md" id="view-atrisk">
               {/* Urgent Alert Banner */}
               <div className="p-space-lg rounded-xl bg-error-container text-on-error-container shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
@@ -346,8 +432,8 @@ export default function OperationsDashboard() {
                       </span>
                     </div>
                     <p className="text-body-md font-body-md mt-0.5 text-on-error-container/90">
-                      <strong>4 students</strong> flagged with overdue milestone submissions;{' '}
-                      <strong>2 nearing critical 24h deadline</strong>. Immediate instructor or TA touchpoint recommended.
+                      <strong>{atRiskStudents.filter(s => s.riskType === 'overdue').length} students</strong> flagged with overdue milestone submissions;{' '}
+                      <strong>{atRiskStudents.filter(s => s.riskType === 'nearing').length} nearing critical 24h deadline</strong>. Immediate instructor or TA touchpoint recommended.
                     </p>
                   </div>
                 </div>
@@ -376,9 +462,18 @@ export default function OperationsDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-space-xs text-label-sm font-label-sm text-on-surface-variant">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-error" /> Overdue
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 ml-2" /> &lt; 24h Left
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-secondary ml-2" /> Warning
+                    <span className="inline-flex items-center gap-1">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-error" />
+                      Overdue
+                    </span>
+                    <span className="inline-flex items-center gap-1 ml-2">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" />
+                      {'< 24h Left'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 ml-2">
+                      <span className="inline-block w-2.5 h-2.5 rounded-full bg-secondary" />
+                      Warning
+                    </span>
                   </div>
                 </div>
 
@@ -386,21 +481,42 @@ export default function OperationsDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm uppercase tracking-wider">
-                        <th className="py-space-sm px-space-lg">Student Profile &amp; ID</th>
-                        <th className="py-space-sm px-space-md">Course &amp; Task Deliverable</th>
+                        <th className="py-space-sm px-space-lg">Student Profile & ID</th>
+                        <th className="py-space-sm px-space-md">Course & Task Deliverable</th>
                         <th className="py-space-sm px-space-md">Scheduled Due Date</th>
-                        <th className="py-space-sm px-space-md">Status &amp; Risk Level</th>
+                        <th className="py-space-sm px-space-md">Status & Risk Level</th>
                         <th className="py-space-sm px-space-lg text-right">Escalation Actions</th>
                       </tr>
                     </thead>
                     <tbody className="text-body-md font-body-md">
-                      {atRiskStudents.map((student) => (
-                        <AtRiskRow
-                          key={student.id}
-                          student={student}
-                          onAction={handleAtRiskAction}
-                        />
-                      ))}
+                      {atRiskStudents.length === 0 ? (
+                        <tr>
+                          <td colSpan="5">
+                            <div className="p-space-2xl text-center flex flex-col items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-space-sm">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                  <circle cx="9" cy="7" r="4" />
+                                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                              </div>
+                              <span className="text-title-md font-title-md text-on-surface">No at-risk students</span>
+                              <span className="text-body-sm font-body-sm text-on-surface-variant mt-1">
+                                All students are on track.
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        atRiskStudents.map((student) => (
+                          <AtRiskRow
+                            key={student.id}
+                            student={student}
+                            onAction={handleAtRiskAction}
+                          />
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

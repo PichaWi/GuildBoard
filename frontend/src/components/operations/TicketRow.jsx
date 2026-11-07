@@ -1,5 +1,6 @@
 import React from 'react';
 import { getInitials, PriorityBadge, StatusBadge } from './Badges';
+import { DEFAULTS } from '../../config/appConfig';
 
 export default function TicketRow({ ticket, onToggleStatus, onDeleteTicket }) {
   return (
@@ -22,7 +23,7 @@ export default function TicketRow({ ticket, onToggleStatus, onDeleteTicket }) {
           <div className="flex flex-col min-w-0">
             <span className="font-title-sm text-title-sm text-on-surface truncate">{ticket.owner}</span>
             <span className="text-label-sm font-label-sm text-on-surface-variant truncate">
-              {ticket.ownerRole || 'Academic Staff'}
+              {ticket.ownerRole || DEFAULTS.ownerRole}
             </span>
           </div>
         </div>

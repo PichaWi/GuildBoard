@@ -1,13 +1,5 @@
 import React from 'react';
-
-const FORM_OWNERS = [
-  { value: 'Dr. Ryan Gosling', label: 'Dr. Ryan Gosling (Faculty)' },
-  { value: 'Aj. Hutchathai', label: 'Aj. Hutchathai' },
-  { value: 'Aj. Tem', label: 'Aj. Tem' },
-  { value: 'Aj. Pajee', label: 'Aj. Pajee' },
-  { value: 'Aj. Milk', label: 'Aj. Milk' },
-  { value: 'Alex Chen (TA)', label: 'Alex Chen (TA)' },
-];
+import { STAFF_OPTIONS } from '../../config/appConfig';
 
 export default function CreateTicketModal({ isOpen, onClose, onSave }) {
   const handleSubmit = (e) => {
@@ -96,8 +88,9 @@ export default function CreateTicketModal({ isOpen, onClose, onSave }) {
                 name="form-task-owner"
                 required
               >
-                {FORM_OWNERS.map(({ value, label }) => (
-                  <option key={value} value={value}>{label}</option>
+                <option value="" disabled>Select assignee</option>
+                {STAFF_OPTIONS.map((staff) => (
+                  <option key={staff.value} value={staff.value}>{staff.label}</option>
                 ))}
               </select>
             </div>
