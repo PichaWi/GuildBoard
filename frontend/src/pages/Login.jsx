@@ -36,6 +36,8 @@ export default function Login() {
     login(role);
     if (role === 'student') {
       navigate('/calendar');
+    } else if (role === 'admin') {
+      navigate('/admin/roles');
     } else {
       navigate('/dashboard');
     }
@@ -302,27 +304,34 @@ export default function Login() {
                 Dev Roles
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => handleMockLogin('student')}
                 className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
               >
-                Login as Student
+                Student
               </button>
               <button
                 type="button"
                 onClick={() => handleMockLogin('ta')}
                 className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
               >
-                Login as TA
+                TA
               </button>
               <button
                 type="button"
                 onClick={() => handleMockLogin('lecturer')}
                 className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
               >
-                Login as Lecturer
+                Lecturer
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMockLogin('admin')}
+                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+              >
+                Admin
               </button>
             </div>
           </div>

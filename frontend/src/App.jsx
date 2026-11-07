@@ -5,12 +5,16 @@ import Login from './pages/Login';
 import Calendar from './pages/Calendar';
 import CreateEvent from './pages/CreateEvent';
 import OperationsDashboard from './pages/OperationsDashboard';
+import CourseMaterials from './pages/CourseMaterials';
+import RoleManagement from './pages/RoleManagement';
+import SearchResults from './pages/SearchResults';
+import TicketDetail from './pages/TicketDetail';
 
 /**
  * ProtectedRoute — gates access based on authentication + optional role checks.
  *
  * @param {React.ReactNode} children
- * @param {boolean}         [requireStaff]       — if true, only ta, lecturer, and admin may access
+ * @param {boolean}         [requireFaculty]     — if true, only lecturer/admin role may access
  * @param {string[]}        [allowedRoles]       — explicit allow-list (e.g. ['ta','lecturer','admin'])
  * @param {string}          [redirectTo='/login'] — where to send unauthorised users
  */
@@ -26,17 +30,17 @@ const ProtectedRoute = ({ children, requireStaff, allowedRoles, redirectTo }) =>
     return <Navigate to="/login" replace />;
   }
 
-  const userRole = String(user.role || '').toLowerCase();
+  const role = user.role ? user.role.toLowerCase() : '';
 
-  // requireStaff: ta, lecturer, and admin can access; students redirected to /calendar
-  if (requireStaff && !['ta', 'lecturer', 'admin'].includes(userRole)) {
+  // Faculty prop: lecturers and admins can access
+  if (requireFaculty && role !== 'lecturer' && role !== 'admin') {
     return <Navigate to="/calendar" replace />;
   }
 
-  // Role allow-list: redirect disallowed roles (compare case-insensitively)
+  // Role allow-list: redirect disallowed roles
   if (allowedRoles) {
-    const normalizedAllowed = allowedRoles.map((r) => String(r).toLowerCase());
-    if (!normalizedAllowed.includes(userRole)) {
+    const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
+    if (!normalizedAllowed.includes(role)) {
       return <Navigate to={redirectTo || '/calendar'} replace />;
     }
   }
@@ -50,7 +54,7 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
 
-      {/* /dashboard — TA, Lecturer, and Admin; students get kicked to /calendar */}
+      {/* /dashboard — TA, Lecturer, and Admin access */}
       <Route
         path="/dashboard"
         element={
@@ -69,6 +73,48 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* /materials — Course materials list (accessible to all authenticated roles) */}
+      <Route
+        path="/materials"
+        element={
+          <ProtectedRoute>
+            <CourseMaterials />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/course-materials" element={<Navigate to="/materials" replace />} />
+
+      {/* /tasks/:id — Ticket / Task Detail view */}
+      <Route
+        path="/tasks/:id"
+        element={
+          <ProtectedRoute>
+            <TicketDetail />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* /search — Search results view */}
+      <Route
+        path="/search"
+        element={
+          <ProtectedRoute>
+            <SearchResults />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* /admin/roles — Role Management (Strictly Admin only) */}
+      <Route
+        path="/admin/roles"
+        element={
+          <ProtectedRoute allowedRoles={['admin']} redirectTo="/dashboard">
+            <RoleManagement />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/create-event"
         element={
@@ -77,6 +123,9 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
