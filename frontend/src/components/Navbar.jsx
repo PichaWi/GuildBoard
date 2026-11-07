@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { DEFAULTS } from '../config/appConfig';
 
 export default function Navbar({ leftContent }) {
   const { user } = useAuth();
@@ -30,9 +31,11 @@ export default function Navbar({ leftContent }) {
         {leftContent}
 
         <nav className="hidden md:flex items-center gap-1.5" aria-label="Global Navigation">
-          <NavLink to="/dashboard" className={navLinkClass}>
-            Dashboard
-          </NavLink>
+          {['ta', 'lecturer', 'admin'].includes(user?.role?.toLowerCase() || '') && (
+            <NavLink to="/dashboard" className={navLinkClass}>
+              Dashboard
+            </NavLink>
+          )}
           <NavLink to="/materials" className={navLinkClass}>
             Materials
           </NavLink>
@@ -89,7 +92,7 @@ export default function Navbar({ leftContent }) {
         )}
 
         <img
-          alt={user?.name || 'User Profile'}
+          alt={user?.name || DEFAULTS.profileName}
           className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H"
         />

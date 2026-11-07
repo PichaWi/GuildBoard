@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoUrl from '../assets/logo.png';
+import { DEFAULTS } from '../config/appConfig';
 
 const ALL_NAV_ITEMS = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard', roles: ['ta', 'lecturer', 'admin'] },
@@ -96,19 +97,19 @@ export default function Sidebar() {
             </NavLink>
           )}
 
-          {(role === 'lecturer' || role === 'admin') && (
+          {/* Create Event - for TAs, lecturers, and admins (matching ALL_NAV_ITEMS) */}
+          {['ta', 'lecturer', 'admin'].includes(role) && (
             <NavLink
-              key={to}
-              to={to}
+              to="/create-event"
               className={({ isActive }) =>
-                `flex items-center gap-space-sm px-space-md py-space-xs rounded-xl font-title-sm text-title-sm transition-all ${isActive
-                  ? 'bg-primary-container text-on-primary font-semibold shadow-sm'
+                `flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all ${isActive
+                  ? 'bg-primary-container text-on-primary font-title-sm shadow-sm'
                   : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
                 }`
               }
             >
-              <span className="material-symbols-outlined text-[20px]">{icon}</span>
-              <span>{label}</span>
+              <span className="material-symbols-outlined text-[20px]">add_circle</span>
+              <span className="font-title-sm text-title-sm">Create Event</span>
             </NavLink>
           )}
 
@@ -143,13 +144,13 @@ export default function Sidebar() {
       <div className="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest">
         <div className="flex items-center gap-space-sm px-space-xs py-space-xs bg-surface-container-low rounded-xl">
           <img
-            alt={user?.name || 'Dr. Ryan Gosling'}
+            alt={user?.name || '{DEFAULTS.profileName}'}
             className="w-8 h-8 rounded-full object-cover"
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H"
           />
           <div className="flex flex-col min-w-0 flex-1">
             <span className="font-title-sm text-title-sm text-on-surface truncate">
-              {user?.name || 'Dr. Ryan Gosling'}
+              {user?.name || '{DEFAULTS.profileName}'}
             </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant truncate capitalize">
               {role === 'admin'
@@ -161,7 +162,7 @@ export default function Sidebar() {
                     : 'B.S. SKE Student'}
             </span>
             <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
-              {getRoleLabel(userRole)}
+              {getRoleLabel(role)}
             </span>
             {user?.email ? (
               <span className="text-[11px] text-on-surface-variant/80 truncate">

@@ -9,6 +9,7 @@ import CourseMaterials from './pages/CourseMaterials';
 import RoleManagement from './pages/RoleManagement';
 import SearchResults from './pages/SearchResults';
 import TicketDetail from './pages/TicketDetail';
+import Settings from './pages/Settings';
 
 /**
  * ProtectedRoute — gates access based on authentication + optional role checks.
@@ -18,7 +19,7 @@ import TicketDetail from './pages/TicketDetail';
  * @param {string[]}        [allowedRoles]       — explicit allow-list (e.g. ['ta','lecturer','admin'])
  * @param {string}          [redirectTo='/login'] — where to send unauthorised users
  */
-const ProtectedRoute = ({ children, requireStaff, allowedRoles, redirectTo }) => {
+const ProtectedRoute = ({ children, requireFaculty, allowedRoles, redirectTo }) => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -118,14 +119,24 @@ function AppRoutes() {
       <Route
         path="/create-event"
         element={
-          <ProtectedRoute requireStaff={true}>
+          <ProtectedRoute allowedRoles={['ta', 'lecturer', 'admin']} redirectTo="/calendar">
             <CreateEvent />
           </ProtectedRoute>
         }
       />
 
-      {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* /settings — Settings page (all authenticated roles) */}
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-all redirect - send to appropriate page based on auth state */}
+      <Route path="*" element={<Navigate to="/calendar" replace />} />
     </Routes>
   );
 }
