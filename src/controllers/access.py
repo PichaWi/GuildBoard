@@ -18,6 +18,8 @@ class Action(str, Enum):
     CREATE_TICKET = "create_ticket"
     UPDATE_TICKET = "update_ticket"
     VIEW_AT_RISK = "view_at_risk"
+    RECORD_CONSULTATION = "record_consultation"
+    SEARCH_CONSULTATIONS = "search_consultations"
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,7 @@ class Rule:
 
 
 _STAFF = frozenset({UserRole.TA, UserRole.LECTURER, UserRole.ADMIN})
+_TA_ONLY = frozenset({UserRole.TA})
 
 PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.VIEW_DRAFT_EVENTS: Rule(
@@ -52,6 +55,14 @@ PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.VIEW_AT_RISK: Rule(
         roles=_STAFF,
         denied_detail="Only Lecturers, TAs and Admins can view at-risk items.",
+    ),
+    Action.RECORD_CONSULTATION: Rule(
+        roles=_TA_ONLY,
+        denied_detail="Only TAs can record consultation sessions.",
+    ),
+    Action.SEARCH_CONSULTATIONS: Rule(
+        roles=_TA_ONLY,
+        denied_detail="Only TAs can search consultation sessions.",
     ),
 }
 

@@ -6,11 +6,12 @@ text (the signed-in user's id), so students without an account can be logged.
 """
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database import Base
+from src.models.ticket import as_utc
 
 
 def _utcnow() -> datetime:
@@ -40,6 +41,11 @@ class ConsultationCreate(BaseModel):
     session_at: datetime
     notes: str = ""
 
+    @field_validator("session_at")
+    @classmethod
+    def session_at_in_utc(cls, value: datetime) -> datetime:
+        return as_utc(value)
+
 
 class ConsultationRead(ConsultationCreate):
     model_config = ConfigDict(from_attributes=True)
@@ -47,3 +53,8 @@ class ConsultationRead(ConsultationCreate):
     id: int
     recorded_by: str
     created_at: datetime
+
+    @field_validator("created_at")
+    @classmethod
+    def created_at_in_utc(cls, value: datetime) -> datetime:
+        return as_utc(value)
