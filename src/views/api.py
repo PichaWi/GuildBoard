@@ -52,6 +52,7 @@ async def read_event_payload(request: Request) -> Any:
     except ValueError:
         return {}
 
+
 @router.post(
     "/auth/dev-login",
     response_model=CurrentUserRead,
@@ -76,6 +77,13 @@ def dev_login(payload: DevLoginRequest, request: Request) -> CurrentUserRead:
 )
 def get_me(user: Annotated[AuthenticatedUser, Depends(current_actor)]) -> CurrentUserRead:
     return _user_response(user)
+
+
+@router.post("/auth/logout", summary="Sign out (used by the React app)")
+def api_logout(request: Request) -> dict[str, str]:
+    """Clear the signed session so /api/auth/me returns 401 afterwards."""
+    request.session.clear()
+    return {"status": "signed_out"}
 
 
 @router.post(

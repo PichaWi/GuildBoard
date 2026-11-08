@@ -10,6 +10,7 @@ from src.controllers.auth import AuthenticatedUser
 from src.controllers.tickets import (
     TicketValidationError,
     create_ticket,
+    get_ticket,
     list_tickets,
     update_ticket,
     validate_ticket_create,
@@ -43,10 +44,35 @@ def read_tickets(
     db: Annotated[Session, Depends(get_db)],
     status_filter: Annotated[
         str | None,
-        Query(alias="status", pattern="^(Open|In-Progress|Closed)$", description="Only tickets with this status"),
+        Query(alias="status", pattern="^(Open|In-Progress|Closed)$",
+              description="Only tickets with this status"),
     ] = None,
 ):
     return list_tickets(db, status_filter=status_filter)
+
+
+@router.get(
+    "/tickets/{ticket_id}",
+    response_model=TicketRead,
+    summary="Get one ticket (Lecturer, TA or Admin only)",
+    responses={
+        401: {"description": "Not signed in"},
+        403: {"description": "Signed in as a Student"},
+        404: {"description": "No ticket with this id"},
+    },
+)
+def read_ticket(
+    ticket_id: int,
+    user: Annotated[AuthenticatedUser, Depends(require_permission(Action.VIEW_TICKETS))],
+    db: Annotated[Session, Depends(get_db)],
+):
+    ticket = get_ticket(db, ticket_id)
+    if ticket is None:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": f"Ticket {ticket_id} was not found."},
+        )
+    return ticket
 
 
 @router.post(

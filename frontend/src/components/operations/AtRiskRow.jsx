@@ -10,7 +10,9 @@ export default function AtRiskRow({ student, onAction }) {
           <div className="flex flex-col">
             <span className="font-title-sm text-title-sm text-on-surface">{student.name}</span>
             <span className="text-label-sm font-label-sm text-on-surface-variant">
-              ID: {student.studentId} • {student.section}
+              {student.ticketNumber
+                ? `${student.ownerRole} • Ticket ${student.ticketNumber}`
+                : `ID: ${student.studentId} • ${student.section}`}
             </span>
           </div>
         </div>

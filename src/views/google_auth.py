@@ -42,6 +42,7 @@ def google_client():
 def _is_browser_navigation(request: Request) -> bool:
     return "text/html" in request.headers.get("accept", "")
 
+
 def _failure(request: Request, *, error: str, detail: str, status_code: int):
     if _is_browser_navigation(request):
         return RedirectResponse(
@@ -114,4 +115,4 @@ async def google_callback(request: Request):
 @router.api_route("/logout", methods=["GET", "POST"], summary="Sign out")
 async def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url=settings.frontend_url(LOGIN_PATH), status_code=status.HTTP_303_SEE_OTHER)

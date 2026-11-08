@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoUrl from '../assets/logo.png';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 const OAUTH_ERROR_MESSAGES = {
   ACCESS_DENIED_UNAUTHORIZED_DOMAIN:
@@ -280,46 +281,52 @@ export default function Login() {
           </form>
 
           {/* Dev / Quick Mock Login */}
-          <div className="mt-space-md pt-space-md border-t border-outline-variant/30">
-            <div className="flex items-center justify-between mb-space-xs">
-              <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                Quick Demo Login
-              </span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-medium">
-                Dev Roles
-              </span>
+          {USE_MOCK ? (
+            <div className="mt-space-md pt-space-md border-t border-outline-variant/30">
+              <div className="flex items-center justify-between mb-space-xs">
+                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+                  Quick Demo Login
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-medium">
+                  Dev Roles
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleMockLogin('student')}
+                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                >
+                  Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMockLogin('ta')}
+                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                >
+                  TA
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMockLogin('lecturer')}
+                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                >
+                  Lecturer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMockLogin('admin')}
+                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                >
+                  Admin
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                type="button"
-                onClick={() => handleMockLogin('student')}
-                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-              >
-                Student
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMockLogin('ta')}
-                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-              >
-                TA
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMockLogin('lecturer')}
-                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-              >
-                Lecturer
-              </button>
-              <button
-                type="button"
-                onClick={() => handleMockLogin('admin')}
-                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-              >
-                Admin
-              </button>
-            </div>
-          </div>
+          ) : (
+            <p className="mt-space-md pt-space-md border-t border-outline-variant/30 font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+              Real-data mode: sign in with Google, or with a demo account from your .env file.
+            </p>
+          )}
 
           {/* Security Guarantee Notice */}
           <div className="mt-space-lg pt-space-md border-t border-outline-variant/20 text-center">

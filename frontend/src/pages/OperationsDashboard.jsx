@@ -155,13 +155,37 @@ export default function OperationsDashboard() {
   };
 
   const handleBatchReminder = () => {
-    showToast('Notified 6 students via LMS Urgent Push & University Email');
+    showToast(`Demo only: reminders for ${atRiskStudents.length} at-risk tickets are not sent yet`);
   };
 
   // ── Derived display values (update KPI cards dynamically) ──────────────────
+  const closedTicketCount = tickets.filter((t) => t.status === 'Closed').length;
+  const overdueCount = atRiskStudents.filter((s) => s.riskType === 'overdue').length;
+  const nearingCount = atRiskStudents.filter((s) => s.riskType === 'nearing').length;
+  const percent = (part, whole) => `${whole ? Math.round((part / whole) * 100) : 0}%`;
+
   const displayCards = summaryCards.map((card) => {
-    if (card.id === 'active-tickets') return { ...card, value: activeTicketCount };
-    if (card.id === 'high-priority') return { ...card, value: highPriorityCount };
+    if (card.id === 'active-tickets') {
+      return {
+        ...card, value: activeTicketCount, subtitle: `${closedTicketCount} closed`,
+        progressWidth: percent(activeTicketCount, tickets.length)
+      };
+    }
+    if (card.id === 'high-priority') {
+      return { ...card, value: highPriorityCount, progressWidth: percent(highPriorityCount, activeTicketCount) };
+    }
+    if (card.id === 'at-risk-students') {
+      return {
+        ...card, value: atRiskStudents.length, subtitle: `${overdueCount} overdue`,
+        progressWidth: percent(atRiskStudents.length, activeTicketCount)
+      };
+    }
+    if (card.id === 'overdue-submissions') {
+      return {
+        ...card, value: overdueCount, subtitle: `${nearingCount} due within 48 hours`,
+        progressWidth: percent(overdueCount, atRiskStudents.length)
+      };
+    }
     return card;
   });
 
@@ -425,15 +449,15 @@ export default function OperationsDashboard() {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="font-title-md text-title-md text-on-error-container font-bold">
-                        Urgent Milestone Interventions Required
+                        At-Risk Tickets Need Attention
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-error text-on-error font-semibold">
                         Triage Live
                       </span>
                     </div>
                     <p className="text-body-md font-body-md mt-0.5 text-on-error-container/90">
-                      <strong>{atRiskStudents.filter(s => s.riskType === 'overdue').length} students</strong> flagged with overdue milestone submissions;{' '}
-                      <strong>{atRiskStudents.filter(s => s.riskType === 'nearing').length} nearing critical 24h deadline</strong>. Immediate instructor or TA touchpoint recommended.
+                      <strong>{overdueCount} {overdueCount === 1 ? 'ticket' : 'tickets'} overdue</strong>;{' '}
+                      <strong>{nearingCount} due within 48 hours</strong>. Follow up with the assigned TA.
                     </p>
                   </div>
                 </div>
@@ -456,7 +480,7 @@ export default function OperationsDashboard() {
               <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
                 <div className="p-space-md bg-surface-container-low/50 flex items-center justify-between">
                   <div className="flex items-center gap-space-xs">
-                    <span className="text-title-sm font-title-sm text-primary">Cohort Submissions Radar</span>
+                    <span className="text-title-sm font-title-sm text-primary">At-Risk Tickets</span>
                     <span className="text-label-sm font-label-sm text-on-surface-variant">
                       • Showing {atRiskStudents.length} Priority Flags
                     </span>
@@ -468,7 +492,7 @@ export default function OperationsDashboard() {
                     </span>
                     <span className="inline-flex items-center gap-1 ml-2">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" />
-                      {'< 24h Left'}
+                      {'< 48h Left'}
                     </span>
                     <span className="inline-flex items-center gap-1 ml-2">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-secondary" />
@@ -481,7 +505,7 @@ export default function OperationsDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm uppercase tracking-wider">
-                        <th className="py-space-sm px-space-lg">Student Profile & ID</th>
+                        <th className="py-space-sm px-space-lg">Owner & Ticket</th>
                         <th className="py-space-sm px-space-md">Course & Task Deliverable</th>
                         <th className="py-space-sm px-space-md">Scheduled Due Date</th>
                         <th className="py-space-sm px-space-md">Status & Risk Level</th>
