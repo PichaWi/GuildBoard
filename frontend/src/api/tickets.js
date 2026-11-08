@@ -70,8 +70,16 @@ export async function getTicket(id) {
     return { ...mapBackendTicket(ticket), description: 'Mock description for ticket ' + id };
   }
 
-  const data = await api.get(`/tickets/${id}`);
-  return mapBackendTicket(data);
+  // The backend exposes ticket detail through GET /tickets only, so reuse the
+  // already-mapped list and avoid inventing an unsupported detail endpoint.
+  const tickets = await getTickets();
+  const ticket = tickets.find(item => String(item.id) === String(id));
+  if (!ticket) {
+    const error = new Error(`Ticket ${id} not found`);
+    error.status = 404;
+    throw error;
+  }
+  return ticket;
 }
 
 export async function createTicket(ticketData) {
