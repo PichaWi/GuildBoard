@@ -88,3 +88,5 @@ except HTTPError as error:
 
 print("frontend, SPA routes, API, auth, and proxy checks: ok")
 PY
+
+"${compose[@]}" exec -T backend python scripts/qa_iteration5_real_data.py

@@ -43,47 +43,12 @@ export default function TicketDetail() {
     } catch (err) {
       console.warn(`GET /api/tickets/${id} failed:`, err.message);
       setError(err.message);
-
-      // Fallback ticket structure for scaffolding
-      const fallbackTicket = {
-        id: id || '1041',
-        title: `Task #${id}: Milestone Code Review & Architecture Rubric`,
-        description: 'Verify clean architecture layer boundaries (Domain, Infrastructure, Application) and ensure microservices contract definitions are satisfied.',
-        course: 'ISP',
-        priority: 'High',
-        status: 'In-Progress',
-        dueDate: 'Mar 24, 2025',
-        assignee: user?.name || DEFAULTS.assignee,
-        assigneeRole: user?.role === 'ta' ? 'Teaching Assistant' : 'Faculty Instructor',
-        createdBy: DEFAULTS.creator,
-        createdAt: '2025-03-10',
-        creatorId: 'unknown@ku.th',
-        deliverables: [
-          { id: 1, text: 'Verify clean architecture layer boundaries', note: 'Validated domain isolation without circular imports', completed: true },
-          { id: 2, text: 'Ensure GitHub commit hashes are linked in submission ledger', note: 'Auto-verified against Classroom roster API tokens', completed: true },
-          { id: 3, text: 'Inspect Docker compose service health checks', note: 'Pending review for multi-container stacks', completed: false },
-          { id: 4, text: 'Grade rubric scoring sheets (30% weight)', note: 'Final marks due by Friday', completed: false },
-        ],
-        attachments: [
-          { id: 1, name: 'submission-repo-manifest.json', size: '184 KB', type: 'JSON Registry', icon: 'data_object' },
-          { id: 2, name: 'rubric-v2-architecture.pdf', size: '1.4 MB', type: 'Official Spec', icon: 'picture_as_pdf' },
-        ],
-        comments: [
-          {
-            id: 1,
-            author: 'Faculty Instructor',
-            authorRole: 'Faculty Instructor',
-            text: "I reviewed the first 6 student team submissions. Three groups have missing service mesh configs. Let's make sure the assigned TA addresses this during tomorrow's lab.",
-            timestamp: '2 hours ago',
-          },
-        ],
-      };
-      setTicket(fallbackTicket);
-      setComments(fallbackTicket.comments);
+      setTicket(null);
+      setComments([]);
     } finally {
       setIsLoading(false);
     }
-  }, [id, user]);
+  }, [id]);
 
   useEffect(() => {
     fetchTicketDetail();
@@ -94,12 +59,7 @@ export default function TicketDetail() {
     try {
       await apiUpdateTicket(id, { status: newStatus });
       setTicket((prev) => ({ ...prev, status: newStatus }));
-    } catch (err) {
-      console.warn('PATCH status error:', err.message);
-      // Optimistic client update for UI demonstration
-      setTicket((prev) => ({ ...prev, status: newStatus }));
-    } finally {
-      setIsCloseModalOpen(false);
+
       if (newStatus === 'Closed') {
         setToast({
           visible: true,
@@ -114,6 +74,15 @@ export default function TicketDetail() {
           type: 'success',
         });
       }
+    } catch (err) {
+      console.warn('PATCH status error:', err.message);
+      setToast({
+        visible: true,
+        message: 'Failed to update task status. Please try again.',
+        type: 'error',
+      });
+    } finally {
+      setIsCloseModalOpen(false);
     }
   };
 
@@ -122,14 +91,18 @@ export default function TicketDetail() {
     try {
       await apiUpdateTicket(id, { owner: newAssignee });
       setTicket((prev) => ({ ...prev, assignee: newAssignee }));
-    } catch (err) {
-      console.warn('PATCH assignee error:', err.message);
-      setTicket((prev) => ({ ...prev, assignee: newAssignee }));
-    } finally {
+
       setToast({
         visible: true,
         message: `Task assigned to ${newAssignee}.`,
         type: 'success',
+      });
+    } catch (err) {
+      console.warn('PATCH assignee error:', err.message);
+      setToast({
+        visible: true,
+        message: 'Failed to assign task. Please try again.',
+        type: 'error',
       });
     }
   };
@@ -139,13 +112,18 @@ export default function TicketDetail() {
     try {
       await apiUpdateTicket(id, { priority: newPriority });
       setTicket((prev) => ({ ...prev, priority: newPriority }));
-    } catch {
-      setTicket((prev) => ({ ...prev, priority: newPriority }));
-    } finally {
+
       setToast({
         visible: true,
         message: `Priority updated to ${newPriority}.`,
         type: 'success',
+      });
+    } catch (err) {
+      console.warn('PATCH priority error:', err.message);
+      setToast({
+        visible: true,
+        message: 'Failed to update task priority. Please try again.',
+        type: 'error',
       });
     }
   };
@@ -174,19 +152,12 @@ export default function TicketDetail() {
         body: JSON.stringify(commentPayload),
       });
 
-      if (response.ok) {
-        const savedComment = await response.json();
-        setComments((prev) => [...prev, savedComment]);
-      } else {
-        // Fallback optimistic comment
-        const mockComment = {
-          id: Date.now(),
-          ...commentPayload,
-          timestamp: 'Just now',
-        };
-        setComments((prev) => [...prev, mockComment]);
+      if (!response.ok) {
+        throw new Error(`Failed to post comment with status ${response.status}`);
       }
 
+      const savedComment = await response.json();
+      setComments((prev) => [...prev, savedComment]);
       setNewComment('');
       setToast({
         visible: true,
@@ -195,16 +166,11 @@ export default function TicketDetail() {
       });
     } catch (err) {
       console.warn('POST comment error:', err.message);
-      const mockComment = {
-        id: Date.now(),
-        text: newComment.trim(),
-        isInternal: isInternalNote,
-        author: user?.name || DEFAULTS.author,
-        authorRole: user?.role || DEFAULTS.ownerRole,
-        timestamp: 'Just now',
-      };
-      setComments((prev) => [...prev, mockComment]);
-      setNewComment('');
+      setToast({
+        visible: true,
+        message: 'Failed to post comment. Please try again.',
+        type: 'error',
+      });
     } finally {
       setIsSubmittingComment(false);
     }
@@ -239,6 +205,25 @@ export default function TicketDetail() {
             progress_activity
           </span>
           <h2 className="font-title-md text-title-md text-on-surface">Loading Task #{id}...</h2>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error && !ticket) {
+    return (
+      <Layout navbarLeftContent={breadcrumbs}>
+        <div className="flex flex-col items-center justify-center gap-space-sm p-space-2xl min-h-[60vh] text-center">
+          <span className="material-symbols-outlined text-error text-[40px]">error</span>
+          <h1 className="font-headline-md text-headline-md text-error">Unable to load task</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant">{error}</p>
+          <button
+            type="button"
+            onClick={fetchTicketDetail}
+            className="mt-2 px-space-md py-2 rounded-lg bg-primary-container text-on-primary font-title-sm text-title-sm"
+          >
+            Retry Request
+          </button>
         </div>
       </Layout>
     );
@@ -296,14 +281,6 @@ export default function TicketDetail() {
               </button>
             </div>
           </div>
-
-          {/* Scaffolding notice if backend error occurred */}
-          {error && (
-            <div className="mb-space-md p-space-md rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-body-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-amber-700">info</span>
-              <span>Scaffolding mode active: Real backend endpoint GET /api/tickets/{id} not yet responding ({error}). Showing prototype schema.</span>
-            </div>
-          )}
 
           {/* Two-Column Grid (Main ~8 cols, Sidebar ~4 cols) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
@@ -530,7 +507,6 @@ export default function TicketDetail() {
                       >
                         <option value="Open">Open (To Do)</option>
                         <option value="In-Progress">In-Progress</option>
-                        <option value="Resolved">Resolved</option>
                         <option value="Closed">Closed</option>
                       </select>
                       <span className="material-symbols-outlined absolute right-2.5 top-2.5 text-outline pointer-events-none">

@@ -5,20 +5,22 @@ export default function CreateTicketModal({ isOpen, onClose, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     const form = e.target;
-    const rawDue = form['form-task-due'].value;
+    const fields = form.elements;
+    const rawDue = fields['form-task-due'].value;
     const formattedDate = new Date(rawDue).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
-    const owner = form['form-task-owner'].value;
+    const owner = fields['form-task-owner'].value;
     const newTicket = {
       id: Date.now(),
-      title: form['form-task-title'].value,
+      title: fields['form-task-title'].value,
+      description: fields['form-task-notes'].value,
       owner,
       ownerRole: owner.includes('TA') ? 'Teaching Assistant' : 'Faculty Instructor',
-      priority: form['form-task-priority'].value,
-      status: form['form-task-status'].value,
+      priority: fields['form-task-priority'].value,
+      status: fields['form-task-status'].value,
       dueDate: formattedDate || 'Mar 28, 2025',
     };
     onSave(newTicket);

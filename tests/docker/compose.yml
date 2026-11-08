@@ -20,6 +20,11 @@ services:
       ENVIRONMENT: test
       SESSION_SECRET: guildboard-docker-smoke-session-secret-2026-only
       FRONTEND_BASE_URL: ""
+      DEV_LOGIN_ENABLED: "true"
+      DEMO_STUDENT_EMAIL: iteration5.student@ku.th
+      DEMO_STUDENT_PASSWORD: iteration5-student-test-password
+      DEMO_LECTURER_EMAIL: iteration5.lecturer@ku.th
+      DEMO_LECTURER_PASSWORD: iteration5-lecturer-test-password
     depends_on:
       db:
         condition: service_healthy

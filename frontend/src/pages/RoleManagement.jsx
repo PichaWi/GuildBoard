@@ -41,6 +41,9 @@ export default function RoleManagement() {
 
   // ─── Update User Role Action (PUT/PATCH /api/users/:id/role) ──────────────
   const updateUserRole = async (userId, newRole) => {
+    const targetUser = users.find((u) => u.id === userId || u._id === userId);
+    const userName = targetUser?.name || 'User';
+
     try {
       setUpdatingUserId(userId);
 
@@ -51,9 +54,6 @@ export default function RoleManagement() {
         prevUsers.map((u) => (u.id === userId || u._id === userId ? { ...u, role: newRole } : u))
       );
 
-      const targetUser = users.find((u) => u.id === userId || u._id === userId);
-      const userName = targetUser?.name || 'User';
-
       setToast({
         visible: true,
         message: `${userName}'s role updated to ${newRole} successfully!`,
@@ -61,19 +61,10 @@ export default function RoleManagement() {
       });
     } catch (err) {
       console.warn(`PATCH /api/users/${userId}/role error:`, err.message);
-
-      // Optimistic fallback update for client-side demo
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => (u.id === userId || u._id === userId ? { ...u, role: newRole } : u))
-      );
-
-      const targetUser = users.find((u) => u.id === userId || u._id === userId);
-      const userName = targetUser?.name || 'User';
-
       setToast({
         visible: true,
-        message: `${userName}'s role updated to ${newRole} (mock mode).`,
-        type: 'success',
+        message: `Failed to update ${userName}'s role. Please try again.`,
+        type: 'error',
       });
     } finally {
       setUpdatingUserId(null);

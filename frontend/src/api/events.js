@@ -51,15 +51,15 @@ export async function getEvents() {
   }
 
   const data = await api.get('/events');
-  return Array.isArray(data) ? data.map(mapBackendEvent) : [];
+  return Array.isArray(data?.events) ? data.events : [];
 }
 
 export async function createEvent(eventData) {
   if (USE_MOCK) {
     await new Promise(r => setTimeout(r, 200));
     const newEvent = {
-      id: Date.now(),
       ...mapBackendEvent(mapFrontendEventToBackend(eventData)),
+      id: Date.now(),
     };
     mockEvents.unshift(newEvent);
     return newEvent;

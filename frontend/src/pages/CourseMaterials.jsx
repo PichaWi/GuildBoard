@@ -156,28 +156,12 @@ export default function CourseMaterials() {
       });
     } catch (err) {
       console.warn('POST /api/materials scaffold error:', err.message);
-      // Optimistic preview creation for developer testing if backend isn't mounted yet
-      const fallbackMaterial = {
-        id: Date.now(),
-        title: uploadFormData.title || 'Untitled Resource',
-        description: uploadFormData.description || 'Uploaded instructional asset.',
-        course: uploadFormData.course,
-        module: uploadFormData.module || 'Week 01',
-        category: uploadFormData.category.toLowerCase().includes('slide') ? 'slides' : 'lab',
-        fileType: uploadFormData.file ? uploadFormData.file.name.split('.').pop() : 'pdf',
-        fileSize: '1.2 MB',
-        publishedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        downloadCount: 0,
-        author: user?.name || DEFAULTS.author,
-        authorRole: user?.role || DEFAULTS.ownerRole,
-      };
-      setMaterials((prev) => [fallbackMaterial, ...prev]);
+      setUploadError('Upload failed. Please try again.');
       setToast({
         visible: true,
-        message: `Material "${fallbackMaterial.title}" saved (scaffold mode).`,
-        type: 'success',
+        message: `Failed to upload "${uploadFormData.title}". Please try again.`,
+        type: 'error',
       });
-      setIsUploadOpen(false);
     } finally {
       setIsUploading(false);
     }
