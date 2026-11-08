@@ -159,9 +159,33 @@ export default function OperationsDashboard() {
   };
 
   // ── Derived display values (update KPI cards dynamically) ──────────────────
+  const closedTicketCount = tickets.filter((t) => t.status === 'Closed').length;
+  const overdueCount = atRiskStudents.filter((s) => s.riskType === 'overdue').length;
+  const nearingCount = atRiskStudents.filter((s) => s.riskType === 'nearing').length;
+  const percent = (part, whole) => `${whole ? Math.round((part / whole) * 100) : 0}%`;
+
   const displayCards = summaryCards.map((card) => {
-    if (card.id === 'active-tickets') return { ...card, value: activeTicketCount };
-    if (card.id === 'high-priority') return { ...card, value: highPriorityCount };
+    if (card.id === 'active-tickets') {
+      return {
+        ...card, value: activeTicketCount, subtitle: `${closedTicketCount} closed`,
+        progressWidth: percent(activeTicketCount, tickets.length)
+      };
+    }
+    if (card.id === 'high-priority') {
+      return { ...card, value: highPriorityCount, progressWidth: percent(highPriorityCount, activeTicketCount) };
+    }
+    if (card.id === 'at-risk-students') {
+      return {
+        ...card, value: atRiskStudents.length, subtitle: `${overdueCount} overdue`,
+        progressWidth: percent(atRiskStudents.length, activeTicketCount)
+      };
+    }
+    if (card.id === 'overdue-submissions') {
+      return {
+        ...card, value: overdueCount, subtitle: `${nearingCount} due within 48 hours`,
+        progressWidth: percent(overdueCount, atRiskStudents.length)
+      };
+    }
     return card;
   });
 
