@@ -6,6 +6,7 @@ import Calendar from './pages/Calendar';
 import CreateEvent from './pages/CreateEvent';
 import OperationsDashboard from './pages/OperationsDashboard';
 import CourseMaterials from './pages/CourseMaterials';
+import Consultations from './pages/Consultations';
 import RoleManagement from './pages/RoleManagement';
 import SearchResults from './pages/SearchResults';
 import TicketDetail from './pages/TicketDetail';
@@ -85,6 +86,16 @@ function AppRoutes() {
         }
       />
       <Route path="/course-materials" element={<Navigate to="/materials" replace />} />
+
+      {/* /consultations — TA consultation log (US-9) */}
+      <Route
+        path="/consultations"
+        element={
+          <ProtectedRoute allowedRoles={['ta']} redirectTo="/calendar">
+            <Consultations />
+          </ProtectedRoute>
+        }
+      />
 
       {/* /tasks/:id — Ticket / Task Detail view */}
       <Route

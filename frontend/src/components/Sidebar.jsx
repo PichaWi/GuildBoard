@@ -9,6 +9,7 @@ const ALL_NAV_ITEMS = [
   { to: '/calendar', icon: 'calendar_month', label: 'Course Calendar', roles: ['student', 'ta', 'lecturer', 'admin'] },
   { to: '/course-materials', icon: 'auto_stories', label: 'Course Materials', roles: ['student', 'ta', 'lecturer', 'admin'] },
   { to: '/create-event', icon: 'add_circle', label: 'Create Event', roles: ['ta', 'lecturer', 'admin'] },
+  { to: '/consultations', icon: 'support_agent', label: 'Consultations', roles: ['ta'] },
   { to: '/settings', icon: 'settings', label: 'Settings', roles: ['student', 'ta', 'lecturer', 'admin'] },
 ];
 
@@ -110,6 +111,21 @@ export default function Sidebar() {
             >
               <span className="material-symbols-outlined text-[20px]">add_circle</span>
               <span className="font-title-sm text-title-sm">Create Event</span>
+            </NavLink>
+          )}
+
+          {role === 'ta' && (
+            <NavLink
+              to="/consultations"
+              className={({ isActive }) =>
+                `flex items-center gap-space-sm px-space-md py-space-xs rounded-xl transition-all ${isActive
+                  ? 'bg-primary-container text-on-primary font-title-sm shadow-sm'
+                  : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+                }`
+              }
+            >
+              <span className="material-symbols-outlined text-[20px]">support_agent</span>
+              <span className="font-title-sm text-title-sm">Consultations</span>
             </NavLink>
           )}
 

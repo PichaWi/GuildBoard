@@ -45,6 +45,8 @@ DESIGNED = {
     Action.CREATE_TICKET: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
     Action.UPDATE_TICKET: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
     Action.VIEW_AT_RISK: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
+    Action.RECORD_CONSULTATION: {"Student": False, "TA": True, "Lecturer": False, "Admin": False},
+    Action.SEARCH_CONSULTATIONS: {"Student": False, "TA": True, "Lecturer": False, "Admin": False},
 }
 
 
@@ -319,6 +321,7 @@ def test_every_write_endpoint_rejects_a_caller_who_is_not_signed_in(client):
     assert ("/api/events", "post") in checked
     assert ("/api/tickets", "post") in checked
     assert ("/api/tickets/{ticket_id}", "patch") in checked
+    assert ("/api/consultations", "post") in checked
 
 
 # --- Drafts follow the same stored role ----------------------------------------
