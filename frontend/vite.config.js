@@ -4,6 +4,12 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    env: {
+      VITE_USE_MOCK: 'false',
+    },
+  },
   server: {
     proxy: {
       '/auth': {

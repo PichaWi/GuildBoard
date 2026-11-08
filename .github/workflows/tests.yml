@@ -29,7 +29,7 @@ jobs:
         run: pytest -q
 
   frontend:
-    name: Frontend build
+    name: Frontend tests and build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -48,6 +48,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Run frontend tests
+        run: npm test
 
       - name: Build frontend
         run: npm run build

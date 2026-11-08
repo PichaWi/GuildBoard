@@ -26,7 +26,7 @@ function mapBackendUser(data) {
     id: data.id,
     role: roleMap[data.role] || 'student',
     name: data.name,
-    email: data.email || `${roleMap[data.role] || 'user'}@ku.th`,
+    email: data.email || (String(data.id).includes('@') ? data.id : undefined),
   };
 }
 
@@ -71,6 +71,12 @@ export async function logout() {
     return { ok: true };
   }
 
-  await api.post('/auth/logout', {});
+  const response = await fetch('/auth/logout', {
+    method: 'POST',
+    credentials: 'include',
+  });
+  if (!response.ok && response.status !== 303) {
+    throw new Error(`Logout failed: HTTP ${response.status}`);
+  }
   return { ok: true };
 }
