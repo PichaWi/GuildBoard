@@ -505,7 +505,7 @@ export default function OperationsDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm uppercase tracking-wider">
-                        <th className="py-space-sm px-space-lg">Student Profile & ID</th>
+                        <th className="py-space-sm px-space-lg">Owner & Ticket</th>
                         <th className="py-space-sm px-space-md">Course & Task Deliverable</th>
                         <th className="py-space-sm px-space-md">Scheduled Due Date</th>
                         <th className="py-space-sm px-space-md">Status & Risk Level</th>

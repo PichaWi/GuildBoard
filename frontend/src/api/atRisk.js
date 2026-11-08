@@ -19,8 +19,8 @@ function mapBackendAtRiskItem(item) {
     id: item.id,
     initials: item.owner ? item.owner.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : 'ST',
     name: item.owner || 'Student',
-    studentId: String(item.id).padStart(8, '0'),
-    section: 'Sec 01',
+    ticketNumber: `#AC-${item.id + 1040}`,
+    ownerRole: item.owner_role || 'Owner',
     taskTitle: item.title,
     course: '', // Not in backend model
     dueDate: dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
