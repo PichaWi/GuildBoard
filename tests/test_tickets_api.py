@@ -87,21 +87,25 @@ def test_the_due_time_is_stored_and_returned_in_utc(client, sign_in):
 
     body = client.post("/api/tickets", json=VALID_TICKET).json()
 
-    assert datetime.fromisoformat(body["due_at"]) == datetime(2026, 10, 28, 10, 0, tzinfo=timezone.utc)
+    assert datetime.fromisoformat(body["due_at"]) == datetime(
+        2026, 10, 28, 10, 0, tzinfo=timezone.utc)
 
 
 def test_a_date_without_a_time_is_accepted_as_midnight_utc(client, sign_in):
     sign_in("TA")
 
-    response = client.post("/api/tickets", json={**VALID_TICKET, "due_at": "2026-10-28"})
+    response = client.post(
+        "/api/tickets", json={**VALID_TICKET, "due_at": "2026-10-28"})
 
     assert response.status_code == 201, response.text
-    assert datetime.fromisoformat(response.json()["due_at"]) == datetime(2026, 10, 28, tzinfo=timezone.utc)
+    assert datetime.fromisoformat(response.json()["due_at"]) == datetime(
+        2026, 10, 28, tzinfo=timezone.utc)
 
 
 def test_priority_and_status_default_to_medium_and_open(client, sign_in):
     sign_in("TA")
-    minimal = {"title": "Lab prep", "owner": "Aj. Milk", "due_at": "2026-10-28T09:00:00Z"}
+    minimal = {"title": "Lab prep", "owner": "Aj. Milk",
+               "due_at": "2026-10-28T09:00:00Z"}
 
     body = client.post("/api/tickets", json=minimal).json()
 
@@ -116,7 +120,8 @@ def test_a_student_cannot_create_a_ticket(client, sign_in, session_factory):
     response = client.post("/api/tickets", json=VALID_TICKET)
 
     assert response.status_code == 403
-    assert response.json() == {"detail": "Students are not permitted to create tickets."}
+    assert response.json() == {
+        "detail": "Students are not permitted to create tickets."}
     assert ticket_count(session_factory) == 0
 
 
@@ -151,7 +156,8 @@ def test_a_role_in_the_body_or_a_header_is_ignored(client, sign_in, session_fact
 def test_missing_required_fields_are_listed(client, sign_in, session_factory):
     sign_in("TA")
 
-    response = client.post("/api/tickets", json={"title": "  ", "priority": "High"})
+    response = client.post(
+        "/api/tickets", json={"title": "  ", "priority": "High"})
 
     assert response.status_code == 400
     body = response.json()
@@ -195,8 +201,10 @@ def test_the_database_write_refuses_a_student_even_if_a_caller_forgets_the_route
 # --- List -----------------------------------------------------------------------
 
 def test_tickets_are_listed_soonest_due_first(client, sign_in, session_factory):
-    later = add_ticket(session_factory, title="Later", due_at=datetime(2026, 11, 5, tzinfo=timezone.utc))
-    sooner = add_ticket(session_factory, title="Sooner", due_at=datetime(2026, 10, 27, tzinfo=timezone.utc))
+    later = add_ticket(session_factory, title="Later",
+                       due_at=datetime(2026, 11, 5, tzinfo=timezone.utc))
+    sooner = add_ticket(session_factory, title="Sooner",
+                        due_at=datetime(2026, 10, 27, tzinfo=timezone.utc))
     sign_in("Lecturer")
 
     response = client.get("/api/tickets")
@@ -219,7 +227,8 @@ def test_tickets_can_be_filtered_by_status(client, sign_in, session_factory):
 def test_an_unknown_status_filter_is_rejected(client, sign_in):
     sign_in("TA")
 
-    assert client.get("/api/tickets", params={"status": "Done"}).status_code == 422
+    assert client.get(
+        "/api/tickets", params={"status": "Done"}).status_code == 422
 
 
 def test_an_empty_list_when_there_are_no_tickets(client, sign_in):
@@ -238,14 +247,16 @@ def test_students_and_nobody_cannot_list_tickets(client, sign_in, session_factor
     sign_in("Student")
     response = client.get("/api/tickets")
     assert response.status_code == 403
-    assert response.json() == {"detail": "Only Lecturers, TAs and Admins can view tickets."}
+    assert response.json() == {
+        "detail": "Only Lecturers, TAs and Admins can view tickets."}
 
 
 def test_staff_can_change_a_ticket_status(client, sign_in, session_factory):
     ticket_id = add_ticket(session_factory, status="Open", priority="Low")
     sign_in("TA")
 
-    response = client.patch(f"/api/tickets/{ticket_id}", json={"status": "In-Progress"})
+    response = client.patch(
+        f"/api/tickets/{ticket_id}", json={"status": "In-Progress"})
 
     assert response.status_code == 200, response.text
     assert response.json()["status"] == "In-Progress"
@@ -261,20 +272,23 @@ def test_several_fields_can_be_changed_at_once(client, sign_in, session_factory)
 
     response = client.patch(
         f"/api/tickets/{ticket_id}",
-        json={"owner": "Aj. Pajee", "priority": "High", "due_at": "2026-11-01T12:00:00Z"},
+        json={"owner": "Aj. Pajee", "priority": "High",
+              "due_at": "2026-11-01T12:00:00Z"},
     )
 
     body = response.json()
     assert response.status_code == 200
     assert (body["owner"], body["priority"]) == ("Aj. Pajee", "High")
-    assert datetime.fromisoformat(body["due_at"]) == datetime(2026, 11, 1, 12, 0, tzinfo=timezone.utc)
+    assert datetime.fromisoformat(body["due_at"]) == datetime(
+        2026, 11, 1, 12, 0, tzinfo=timezone.utc)
 
 
 def test_the_description_can_be_cleared(client, sign_in, session_factory):
     ticket_id = add_ticket(session_factory, description="old notes")
     sign_in("TA")
 
-    response = client.patch(f"/api/tickets/{ticket_id}", json={"description": None})
+    response = client.patch(
+        f"/api/tickets/{ticket_id}", json={"description": None})
 
     assert response.status_code == 200
     assert response.json()["description"] == ""
@@ -295,7 +309,8 @@ def test_an_invalid_status_is_not_saved(client, sign_in, session_factory):
     ticket_id = add_ticket(session_factory, status="Open")
     sign_in("TA")
 
-    response = client.patch(f"/api/tickets/{ticket_id}", json={"status": "Done"})
+    response = client.patch(
+        f"/api/tickets/{ticket_id}", json={"status": "Done"})
 
     assert response.status_code == 422
     with session_factory() as db:
@@ -315,7 +330,8 @@ def test_a_student_cannot_update_a_ticket(client, sign_in, session_factory):
     ticket_id = add_ticket(session_factory, status="Open")
     sign_in("Student")
 
-    response = client.patch(f"/api/tickets/{ticket_id}", json={"status": "Closed"})
+    response = client.patch(
+        f"/api/tickets/{ticket_id}", json={"status": "Closed"})
 
     assert response.status_code == 403
     with session_factory() as db:
@@ -326,7 +342,8 @@ def test_the_update_refuses_a_student_even_if_a_caller_forgets_the_route_check(s
     ticket_id = add_ticket(session_factory, status="Open")
 
     with session_factory() as db, pytest.raises(HTTPException) as denied:
-        update_ticket(db, ticket_id, TicketUpdate(status="Closed"), someone(UserRole.STUDENT))
+        update_ticket(db, ticket_id, TicketUpdate(
+            status="Closed"), someone(UserRole.STUDENT))
 
     assert denied.value.status_code == 403
     with session_factory() as db:
@@ -339,13 +356,44 @@ def test_the_database_rejects_a_status_that_does_not_exist(session_factory):
 
 
 def test_the_values_the_database_allows_are_the_values_the_api_accepts():
-    assert set(PRIORITY_VALUES) == set(TicketCreate.model_fields["priority"].annotation.__args__)
-    assert set(STATUS_VALUES) == set(TicketCreate.model_fields["status"].annotation.__args__)
+    assert set(PRIORITY_VALUES) == set(
+        TicketCreate.model_fields["priority"].annotation.__args__)
+    assert set(STATUS_VALUES) == set(
+        TicketCreate.model_fields["status"].annotation.__args__)
 
 
 def test_the_tickets_table_is_valid_postgresql():
-    ddl = str(CreateTable(Ticket.__table__).compile(dialect=postgresql.dialect()))
+    ddl = str(CreateTable(Ticket.__table__).compile(
+        dialect=postgresql.dialect()))
 
     assert "CONSTRAINT ck_tickets_status CHECK (status IN ('Open', 'In-Progress', 'Closed'))" in ddl
     assert "CONSTRAINT ck_tickets_priority CHECK (priority IN ('Low', 'Medium', 'High'))" in ddl
     assert "due_at TIMESTAMP WITH TIME ZONE NOT NULL" in ddl
+
+
+def test_staff_can_read_one_ticket(client, sign_in):
+    sign_in("TA")
+    created = client.post("/api/tickets", json=VALID_TICKET).json()
+
+    response = client.get(f"/api/tickets/{created['id']}")
+
+    assert response.status_code == 200
+    assert response.json()["title"] == VALID_TICKET["title"]
+
+
+def test_reading_a_missing_ticket_is_404(client, sign_in):
+    sign_in("TA")
+
+    response = client.get("/api/tickets/9999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Ticket 9999 was not found."
+
+
+def test_a_student_cannot_read_a_ticket(client, sign_in):
+    sign_in("Student")
+    assert client.get("/api/tickets/1").status_code == 403
+
+
+def test_reading_a_ticket_requires_sign_in(client):
+    assert client.get("/api/tickets/1").status_code == 401

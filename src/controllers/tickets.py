@@ -53,7 +53,8 @@ def _validate(model: type[BaseModel], data: dict[str, Any]) -> Any:
 
 def validate_ticket_create(raw: Any) -> TicketCreate:
     cleaned = _clean(raw)
-    required = [name for name, field in TicketCreate.model_fields.items() if field.is_required()]
+    required = [name for name, field in TicketCreate.model_fields.items()
+                if field.is_required()]
     missing = [name for name in required if _is_blank(cleaned.get(name))]
     if missing:
         raise TicketValidationError(
@@ -74,6 +75,10 @@ def list_tickets(db: Session, *, status_filter: str | None = None) -> list[Ticke
     if status_filter:
         query = query.where(Ticket.status == status_filter)
     return list(db.scalars(query.order_by(Ticket.due_at, Ticket.id)))
+
+
+def get_ticket(db: Session, ticket_id: int) -> Ticket | None:
+    return db.get(Ticket, ticket_id)
 
 
 def create_ticket(db: Session, payload: TicketCreate, user: AuthenticatedUser) -> Ticket:
