@@ -13,7 +13,7 @@ const OAUTH_ERROR_MESSAGES = {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,17 +27,18 @@ export default function Login() {
     navigate('/login', { replace: true });
   }, [navigate]);
 
-  const handleMockLogin = (role) => {
-    if (role === 'ta') {
-      const taEmail = import.meta.env.VITE_TA_EMAIL;
-      const taPassword = import.meta.env.VITE_TA_PASSWORD;
-      console.log('TA Mock Login with env credentials:', { taEmail, taPassword });
-    }
-    login(role);
-    if (role === 'student') {
-      navigate('/calendar');
-    } else {
-      navigate('/dashboard');
+  const handleMockLogin = async (role) => {
+    try {
+      await login(role);
+      if (role === 'student') {
+        navigate('/calendar');
+      } else if (role === 'admin') {
+        navigate('/admin/roles');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError(err.message || 'Mock login failed');
     }
   };
 
@@ -47,54 +48,40 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/dev-login', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password
-        })
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(result.detail || `Sign in failed (${response.status})`);
-      }
-      const rawRole = String(result.role || '').toLowerCase();
+      await login('', email.trim(), password);
+      // Determine role from email heuristic for redirect
+      const lowerEmail = email.toLowerCase();
       let role = 'student';
-      if (rawRole === 'ta' || rawRole === 'teaching_assistant') role = 'ta';
-      else if (rawRole === 'lecturer' || rawRole === 'faculty' || rawRole === 'admin') role = 'lecturer';
-      else if (email.toLowerCase().includes('aj.') || email.toLowerCase().includes('lecturer')) role = 'lecturer';
-      else if (email.toLowerCase().includes('ta')) role = 'ta';
+      if (lowerEmail.includes('admin')) {
+        role = 'admin';
+      } else if (lowerEmail.includes('aj.') || lowerEmail.includes('faculty') || lowerEmail.includes('lecturer')) {
+        role = 'lecturer';
+      } else if (lowerEmail.includes('ta')) {
+        role = 'ta';
+      }
 
-      login(role);
       if (role === 'student') {
         navigate('/calendar');
+      } else if (role === 'admin') {
+        navigate('/admin/roles');
       } else {
         navigate('/dashboard');
       }
     } catch (err) {
-      // If dev backend is unavailable or running standalone frontend demo, provide fallback
-      if (email && password) {
-        const lowerEmail = email.toLowerCase();
-        let role = 'student';
-        if (lowerEmail.includes('aj.') || lowerEmail.includes('faculty') || lowerEmail.includes('lecturer')) {
-          role = 'lecturer';
-        } else if (lowerEmail.includes('ta')) {
-          role = 'ta';
-        }
-        login(role);
-        if (role === 'student') {
-          navigate('/calendar');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        setError(err.message || 'Please enter valid credentials.');
-        setIsLoading(false);
-      }
+      setError(err.message || 'Please enter valid credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Wait for auth to finish loading before rendering
+  if (authLoading) {
+    return (
+      <div className="bg-background font-body-md text-on-surface min-h-screen bg-grid-pattern flex items-center justify-center">
+        <span className="material-symbols-outlined text-primary text-[40px] animate-spin">progress_activity</span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background font-body-md text-on-surface min-h-screen bg-grid-pattern flex flex-col justify-between selection:bg-primary selection:text-white">
@@ -150,7 +137,7 @@ export default function Login() {
             {/* Role Access Pill */}
             <div className="mt-space-xs">
               <span className="inline-flex items-center px-space-sm py-0.5 rounded-full font-label-sm text-label-sm bg-secondary-container/40 text-primary-container border border-secondary-container/60 font-semibold">
-                Faculty &amp; Student Single Sign-On
+                Faculty & Student Single Sign-On
               </span>
             </div>
           </div>
@@ -302,27 +289,34 @@ export default function Login() {
                 Dev Roles
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => handleMockLogin('student')}
                 className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
               >
-                Login as Student
+                Student
               </button>
               <button
                 type="button"
                 onClick={() => handleMockLogin('ta')}
                 className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
               >
-                Login as TA
+                TA
               </button>
               <button
                 type="button"
                 onClick={() => handleMockLogin('lecturer')}
                 className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
               >
-                Login as Lecturer
+                Lecturer
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMockLogin('admin')}
+                className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+              >
+                Admin
               </button>
             </div>
           </div>
@@ -332,7 +326,7 @@ export default function Login() {
             <p className="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
               <span className="inline-flex items-center justify-center gap-1 font-medium text-on-surface">
                 <span className="material-symbols-outlined text-sm text-primary">verified_user</span>
-                Protected by Institutional SSO &amp; Dual-Factor Auth
+                Protected by Institutional SSO & Dual-Factor Auth
               </span>
               <br />
               By signing in, you agree to the{' '}
