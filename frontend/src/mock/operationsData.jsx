@@ -40,7 +40,7 @@ export const INITIAL_SUMMARY_CARDS = [
   },
   {
     id: 'at-risk-students',
-    label: 'At-Risk Students',
+    label: 'At-Risk Tickets',
     value: 6,
     subtitle: '4 overdue milestone',
     subtitleClass: 'text-label-sm font-label-sm text-error font-medium',
@@ -59,7 +59,7 @@ export const INITIAL_SUMMARY_CARDS = [
   },
   {
     id: 'overdue-submissions',
-    label: 'Overdue Submissions',
+    label: 'Overdue Tickets',
     value: 3,
     subtitle: '> 48 hours lag',
     subtitleClass: 'text-label-sm font-label-sm text-on-surface-variant',

@@ -155,7 +155,7 @@ export default function OperationsDashboard() {
   };
 
   const handleBatchReminder = () => {
-    showToast('Notified 6 students via LMS Urgent Push & University Email');
+    showToast(`Demo only: reminders for ${atRiskStudents.length} at-risk tickets are not sent yet`);
   };
 
   // ── Derived display values (update KPI cards dynamically) ──────────────────
@@ -449,15 +449,15 @@ export default function OperationsDashboard() {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="font-title-md text-title-md text-on-error-container font-bold">
-                        Urgent Milestone Interventions Required
+                        At-Risk Tickets Need Attention
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-error text-on-error font-semibold">
                         Triage Live
                       </span>
                     </div>
                     <p className="text-body-md font-body-md mt-0.5 text-on-error-container/90">
-                      <strong>{atRiskStudents.filter(s => s.riskType === 'overdue').length} students</strong> flagged with overdue milestone submissions;{' '}
-                      <strong>{atRiskStudents.filter(s => s.riskType === 'nearing').length} nearing critical 24h deadline</strong>. Immediate instructor or TA touchpoint recommended.
+                      <strong>{overdueCount} {overdueCount === 1 ? 'ticket' : 'tickets'} overdue</strong>;{' '}
+                      <strong>{nearingCount} due within 48 hours</strong>. Follow up with the assigned TA.
                     </p>
                   </div>
                 </div>
@@ -480,7 +480,7 @@ export default function OperationsDashboard() {
               <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
                 <div className="p-space-md bg-surface-container-low/50 flex items-center justify-between">
                   <div className="flex items-center gap-space-xs">
-                    <span className="text-title-sm font-title-sm text-primary">Cohort Submissions Radar</span>
+                    <span className="text-title-sm font-title-sm text-primary">At-Risk Tickets</span>
                     <span className="text-label-sm font-label-sm text-on-surface-variant">
                       • Showing {atRiskStudents.length} Priority Flags
                     </span>
@@ -492,7 +492,7 @@ export default function OperationsDashboard() {
                     </span>
                     <span className="inline-flex items-center gap-1 ml-2">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500" />
-                      {'< 24h Left'}
+                      {'< 48h Left'}
                     </span>
                     <span className="inline-flex items-center gap-1 ml-2">
                       <span className="inline-block w-2.5 h-2.5 rounded-full bg-secondary" />
