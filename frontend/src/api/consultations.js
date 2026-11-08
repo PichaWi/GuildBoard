@@ -1,6 +1,6 @@
 /**
  * Consultations service module - TA consultation sessions (US-9).
- * Currently uses mock data only - backend endpoints not yet implemented.
+ * Uses mock data when VITE_USE_MOCK=true, otherwise calls real backend endpoints.
  */
 import { api } from './client';
 
@@ -43,19 +43,58 @@ const mockConsultations = [
   },
 ];
 
-export async function getConsultations() {
+function mapBackendConsultation(c) {
+  return {
+    id: c.id,
+    studentName: c.student_name,
+    studentId: c.student_id,
+    courseCode: c.course_code,
+    topic: c.topic,
+    sessionAt: c.session_at,
+    notes: c.notes,
+    recordedBy: c.recorded_by,
+    createdAt: c.created_at,
+  };
+}
+
+function mapFrontendConsultationToBackend(c) {
+  return {
+    student_name: c.studentName,
+    student_id: c.studentId || '',
+    course_code: c.courseCode || '',
+    topic: c.topic,
+    session_at: c.sessionAt,
+    notes: c.notes || '',
+  };
+}
+
+function sessionDateInThailand(sessionAt) {
+  return new Date(sessionAt).toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+}
+
+function filterMockConsultations({ keyword, student, date }) {
+  const includes = (value, term) => value.toLowerCase().includes(term.trim().toLowerCase());
+  return mockConsultations.filter((c) => (
+    (!keyword?.trim() || [c.topic, c.notes, c.courseCode].some(value => includes(value, keyword)))
+    && (!student?.trim() || [c.studentName, c.studentId].some(value => includes(value, student)))
+    && (!date || sessionDateInThailand(c.sessionAt) === date)
+  )).sort((a, b) => new Date(b.sessionAt) - new Date(a.sessionAt));
+}
+
+export async function getConsultations({ keyword, student, date } = {}) {
   if (USE_MOCK) {
     await new Promise(r => setTimeout(r, 100));
-    return mockConsultations;
+    return filterMockConsultations({ keyword, student, date });
   }
 
-  // Backend endpoint not yet implemented
-  try {
-    const data = await api.get('/consultations');
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
+  const params = new URLSearchParams();
+  if (keyword?.trim()) params.set('q', keyword.trim());
+  if (student?.trim()) params.set('student', student.trim());
+  if (date) params.set('date', date);
+  const query = params.toString();
+
+  const data = await api.get(query ? `/consultations?${query}` : '/consultations');
+  return Array.isArray(data) ? data.map(mapBackendConsultation) : [];
 }
 
 export async function createConsultation(consultationData) {
@@ -71,7 +110,6 @@ export async function createConsultation(consultationData) {
     return newConsultation;
   }
 
-  // Backend endpoint not yet implemented
-  const data = await api.post('/consultations', consultationData);
-  return data;
+  const data = await api.post('/consultations', mapFrontendConsultationToBackend(consultationData));
+  return mapBackendConsultation(data);
 }
