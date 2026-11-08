@@ -152,6 +152,33 @@ created by **Alembic** migrations in `migrations/`. ER diagram:
 If `DATABASE_URL` is empty the app uses a local SQLite file (`guildboard.db`) and
 creates tables automatically; tests always use in-memory SQLite.
 
+## Testing
+
+Run the backend tests from the repository root after installing `requirements.txt`:
+
+```sh
+python -m pytest -q
+```
+
+Run the frontend regression tests and production build:
+
+```sh
+cd frontend
+npm ci
+npm test
+npm run build
+```
+
+For real HTTP requests and PostgreSQL data, start Docker Desktop and run
+`bash scripts/test_docker.sh` from the repository root. This uses a temporary
+database and test-only Student/Lecturer accounts, then removes its containers
+and volumes. It does not use your `.env` or existing database.
+
+GitHub Actions runs the backend tests, frontend tests, and build on pushes and
+pull requests. A repository admin must make **Backend tests** and **Frontend
+tests and build** required checks for `main` if failed checks should block merges.
+The workflow alone does not enforce that setting.
+
 ## Event API integration
 
 The current iteration exposes `POST /api/events` for the Create Event form and
