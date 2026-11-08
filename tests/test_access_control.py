@@ -66,7 +66,8 @@ class Database:
 
     def set_role(self, email: str, role: str) -> None:
         with self._session_factory() as db:
-            db.execute(update(User).where(User.email == email).values(role=role))
+            db.execute(update(User).where(
+                User.email == email).values(role=role))
             db.commit()
 
     def users(self) -> int:
@@ -106,7 +107,8 @@ def sign_in(client, google, database):
     def _sign_in(email: str, stored_role: str | None = None, **claims) -> None:
         if stored_role:
             database.add_user(email, stored_role)
-        google({"email": email, "email_verified": True, "name": email.split("@")[0], **claims})
+        google({"email": email, "email_verified": True,
+               "name": email.split("@")[0], **claims})
         response = client.get("/auth/callback", follow_redirects=False)
         assert response.status_code == 303, response.text
 
@@ -176,7 +178,8 @@ def test_a_role_changed_in_the_database_applies_on_the_next_request(client, sign
     sign_in("grows.into.it@ku.th")
     assert client.post("/api/events", json=VALID_EVENT).status_code == 403
 
-    database.set_role("grows.into.it@ku.th", "Lecturer")  # promoted while signed in
+    # promoted while signed in
+    database.set_role("grows.into.it@ku.th", "Lecturer")
     assert client.post("/api/events", json=VALID_EVENT).status_code == 201
 
     database.set_role("grows.into.it@ku.th", "Student")  # and demoted again
@@ -206,7 +209,8 @@ def test_local_dev_sessions_keep_their_configured_role_and_skip_the_users_table(
     created = client.post("/api/events", json=VALID_EVENT)
 
     assert created.status_code == 201
-    assert client.get("/api/auth/me").json()["auth_mode"] == "signed-dev-session-not-for-production"
+    assert client.get(
+        "/api/auth/me").json()["auth_mode"] == "signed-dev-session-not-for-production"
     assert database.users() == 0
 
 
@@ -221,13 +225,15 @@ def test_a_google_session_ends_when_its_domain_stops_being_allowed(
     assert response.status_code == 401
     assert database.users() == 0  # nobody outside the domain is ever stored
     monkeypatch.setattr(settings, "allowed_email_domain", "ku.th")
-    assert client.get("/api/auth/me").status_code == 401  # and the session is gone
+    # and the session is gone
+    assert client.get("/api/auth/me").status_code == 401
 
 
 def test_provisioning_recovers_when_another_request_creates_the_user_first(
     session_factory, database, monkeypatch
 ):
-    database.add_user("race@ku.th", "Lecturer")  # the "other request" got there first
+    # the "other request" got there first
+    database.add_user("race@ku.th", "Lecturer")
     real_find = users_controller.find_user
     lookups = []
 
@@ -238,7 +244,8 @@ def test_provisioning_recovers_when_another_request_creates_the_user_first(
     monkeypatch.setattr(users_controller, "find_user", stale_then_real)
 
     with session_factory() as db:
-        user = users_controller.get_or_provision_user(db, email="race@ku.th", name="Race")
+        user = users_controller.get_or_provision_user(
+            db, email="race@ku.th", name="Race")
 
     assert user.role == "Lecturer"
     assert database.users() == 1
@@ -271,10 +278,12 @@ def test_creating_an_event_for_every_role_and_for_nobody(
 def test_the_role_is_checked_before_the_payload_is_read(client, sign_in):
     sign_in("student@ku.th")
 
-    response = client.post("/api/events", content=b"{not json", headers={"Content-Type": "application/json"})
+    response = client.post(
+        "/api/events", content=b"{not json", headers={"Content-Type": "application/json"})
 
     assert response.status_code == 403
-    assert response.json() == {"detail": "Students are not permitted to create events."}
+    assert response.json() == {
+        "detail": "Students are not permitted to create events."}
 
 
 def test_the_database_write_refuses_a_student_even_if_a_caller_forgets_the_route_check(
@@ -294,7 +303,8 @@ def test_the_database_write_refuses_a_student_even_if_a_caller_forgets_the_route
 @pytest.mark.filterwarnings("ignore:Duplicate Operation ID")
 def test_every_write_endpoint_rejects_a_caller_who_is_not_signed_in(client):
     """Fails if someone adds a POST/PUT/PATCH/DELETE route without a permission check."""
-    public = {("/api/auth/dev-login", "post"), ("/auth/logout", "post")}
+    public = {("/api/auth/dev-login", "post"),
+              ("/api/auth/logout", "post"), ("/auth/logout", "post")}
     checked = []
 
     for path, operations in client.app.openapi()["paths"].items():
@@ -329,7 +339,8 @@ def test_unpublished_events_follow_the_stored_role(client, sign_in, database):
 
 def test_assigning_a_role_creates_a_user_who_has_not_signed_in_yet(session_factory, database):
     with session_factory() as db:
-        user, created = users_controller.assign_role(db, "  New.Lecturer@KU.th ", UserRole.LECTURER)
+        user, created = users_controller.assign_role(
+            db, "  New.Lecturer@KU.th ", UserRole.LECTURER)
 
     assert created is True
     assert user.email == "new.lecturer@ku.th"
@@ -340,7 +351,8 @@ def test_assigning_a_role_updates_an_existing_user(session_factory, database):
     database.add_user("aj.milk@ku.th", "Student")
 
     with session_factory() as db:
-        _, created = users_controller.assign_role(db, "aj.milk@ku.th", UserRole.ADMIN)
+        _, created = users_controller.assign_role(
+            db, "aj.milk@ku.th", UserRole.ADMIN)
 
     assert created is False
     assert database.role_of("aj.milk@ku.th") == "Admin"
@@ -358,7 +370,8 @@ def test_a_person_who_gets_a_role_before_signing_in_keeps_it_at_first_sign_in(
     client, sign_in, session_factory
 ):
     with session_factory() as db:
-        users_controller.assign_role(db, "pre.assigned@ku.th", UserRole.LECTURER)
+        users_controller.assign_role(
+            db, "pre.assigned@ku.th", UserRole.LECTURER)
 
     sign_in("pre.assigned@ku.th")
 
@@ -379,7 +392,8 @@ def test_the_roles_the_database_allows_are_the_roles_the_app_knows():
 
 
 def test_the_users_table_is_valid_postgresql():
-    ddl = str(CreateTable(User.__table__).compile(dialect=postgresql.dialect()))
+    ddl = str(CreateTable(User.__table__).compile(
+        dialect=postgresql.dialect()))
 
     assert "CONSTRAINT ck_users_role CHECK (role IN ('Student', 'TA', 'Lecturer', 'Admin'))" in ddl
     assert "email VARCHAR(320) NOT NULL" in ddl
@@ -409,7 +423,8 @@ def stored_roles(tmp_path) -> dict[str, str]:
 
 def test_the_script_creates_and_then_updates_a_user(tmp_path):
     created = run_script(tmp_path, "lecturer@ku.th", "Lecturer")
-    updated = run_script(tmp_path, "lecturer@ku.th", "admin")  # role names ignore case
+    updated = run_script(tmp_path, "lecturer@ku.th",
+                         "admin")  # role names ignore case
 
     assert created.returncode == 0 and "Created lecturer@ku.th as Lecturer." in created.stdout
     assert updated.returncode == 0 and "Updated lecturer@ku.th as Admin." in updated.stdout
