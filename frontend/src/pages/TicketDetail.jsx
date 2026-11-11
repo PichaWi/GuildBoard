@@ -289,7 +289,7 @@ export default function TicketDetail() {
               <div className="flex items-center gap-space-sm text-body-sm font-body-sm text-on-surface-variant flex-wrap mt-1">
                 <span>Created by: {ticket?.createdBy || ticket?.creator?.name || DEFAULTS.creator}</span>
                 <span>•</span>
-                <span>Due Date: {ticket?.dueDate || 'Mar 24, 2025'}</span>
+                <span>Due Date: {ticket?.dueDate || 'No due date'}</span>
               </div>
             </div>
 
@@ -604,7 +604,7 @@ export default function TicketDetail() {
                           calendar_month
                         </span>
                         <span className="font-title-sm text-title-sm text-on-surface">
-                          {ticket?.dueDate || 'Mar 24, 2025'}
+                          {ticket?.dueDate || 'No due date'}
                         </span>
                       </div>
                       <span className="px-1.5 py-0.5 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
