@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import UserAvatar from './UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import logoUrl from '../assets/logo.png';
 
@@ -35,11 +36,7 @@ function TopNavbar() {
           <span className="material-symbols-outlined text-xl">notifications</span>
         </button>
         <div className="flex items-center gap-space-xs">
-          <img
-            alt="Profile"
-            className="w-8 h-8 rounded-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H"
-          />
+          <UserAvatar user={user} />
           <span className="font-label-md text-label-md text-on-surface hidden md:inline-block">
             {user?.name || 'User'}
           </span>

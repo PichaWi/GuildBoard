@@ -27,6 +27,7 @@ class CurrentUserRead(BaseModel):
     name: str
     role: UserRole
     auth_mode: str
+    picture: str = ""
 
 
 class DevLoginRequest(BaseModel):
@@ -40,6 +41,7 @@ def _user_response(user: AuthenticatedUser) -> CurrentUserRead:
         name=user.name,
         role=user.role,
         auth_mode=user.auth_mode,
+        picture=user.picture,
     )
 
 

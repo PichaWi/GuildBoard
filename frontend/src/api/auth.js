@@ -14,8 +14,8 @@ const MOCK_USERS = {
 };
 
 function mapBackendUser(data) {
-  // Backend returns: id, name, role (UserRole enum: Student, Lecturer, TA, Admin), auth_mode
-  // Frontend expects: role (lowercase), name, email, id
+  // Backend returns: id, name, role (UserRole enum: Student, Lecturer, TA, Admin), auth_mode, picture
+  // Frontend expects: role (lowercase), name, email, id, picture
   const roleMap = {
     Student: 'student',
     Lecturer: 'lecturer',
@@ -27,6 +27,7 @@ function mapBackendUser(data) {
     role: roleMap[data.role] || 'student',
     name: data.name,
     email: data.email || (String(data.id).includes('@') ? data.id : undefined),
+    picture: data.picture || undefined,
   };
 }
 
