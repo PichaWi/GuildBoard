@@ -635,15 +635,15 @@ export default function TicketDetail() {
                   </span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  This task tracks rubric progress and architectural health across 24 student engineering teams.
+                  {health.text}
                 </p>
                 <div className="p-space-sm rounded-xl bg-surface shadow-2xs flex flex-col gap-1.5 mt-1">
                   <div className="flex items-center justify-between text-body-sm font-body-sm">
-                    <span className="text-on-surface font-title-sm">Grading Progress</span>
-                    <span className="text-primary font-bold">75%</span>
+                    <span className="text-on-surface font-title-sm">Progress (from status)</span>
+                    <span className="text-primary font-bold">{health.progress}%</span>
                   </div>
                   <div className="w-full h-2 rounded-full bg-surface-container overflow-hidden">
-                    <div className="h-full bg-primary-container rounded-full" style={{ width: '75%' }} />
+                    <div className="h-full bg-primary-container rounded-full" style={{ width: `${health.progress}%` }} />
                   </div>
                 </div>
               </div>
