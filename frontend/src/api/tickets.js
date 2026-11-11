@@ -68,7 +68,8 @@ export async function getTicket(id) {
     await new Promise(r => setTimeout(r, 100));
     const ticket = mockTickets.find(t => t.id === parseInt(id, 10));
     if (!ticket) throw new Error(`Ticket ${id} not found`);
-    return { ...mapBackendTicket(ticket), description: 'Mock description for ticket ' + id };
+    // mock tickets only have dueDate (no due_at), so keep it or the page shows no due date
+    return { ...mapBackendTicket(ticket), dueDate: ticket.dueDate, description: 'Mock description for ticket ' + id };
   }
 
   // The backend exposes ticket detail through GET /tickets only, so reuse the
