@@ -12,6 +12,27 @@ const OAUTH_ERROR_MESSAGES = {
   OAUTH_NOT_CONFIGURED: 'Google sign-in is not configured on this server.',
 };
 
+// Text for the "Forgot?" and "Need help?" links. There is no password reset
+// on our server: real users sign in with KU Google, demo users come from .env.
+const HELP_TOPICS = {
+  forgot: {
+    title: 'Forgot your password?',
+    points: [
+      'GuildBoard does not keep your university password. If you sign in with your @ku.th Google account, reset the password with Google or KU IT.',
+      'Demo accounts use the password set in the server .env file (DEMO_STUDENT_PASSWORD / DEMO_LECTURER_PASSWORD). Ask the person running the server.',
+    ],
+    link: { href: 'https://accounts.google.com/signin/recovery', text: 'Open Google account recovery' },
+  },
+  help: {
+    title: 'Trouble signing in?',
+    points: [
+      'Use "Continue with University Google Account" and pick your @ku.th email. Other domains are blocked.',
+      'If you see "Access Denied", you are probably signed in to a personal Gmail. Switch account and try again.',
+      'Still stuck? Contact your course TA or lecturer so they can check your role.',
+    ],
+  },
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const { login, isLoading: authLoading } = useAuth();
@@ -19,6 +40,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [helpTopic, setHelpTopic] = useState(null); // null, 'forgot' or 'help'
+
+  // click the same link again to close it
+  const toggleHelp = (topic) => {
+    setHelpTopic(helpTopic === topic ? null : topic);
+  };
 
   // Show why a Google sign-in was refused, then drop ?error= so a refresh does not show the same message again.
   useEffect(() => {
@@ -220,12 +247,14 @@ export default function Login() {
                 >
                   Password
                 </label>
-                <a
-                  className="font-label-sm text-label-sm text-primary hover:underline font-semibold"
-                  href="#reset-password"
+                <button
+                  type="button"
+                  onClick={() => toggleHelp('forgot')}
+                  aria-expanded={helpTopic === 'forgot'}
+                  className="font-label-sm text-label-sm text-primary hover:underline font-semibold cursor-pointer"
                 >
                   Forgot?
-                </a>
+                </button>
               </div>
               <div className="relative">
                 <input
@@ -255,13 +284,48 @@ export default function Login() {
                   Remember this device (30 days)
                 </span>
               </label>
-              <a
-                className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
-                href="#login-help"
+              <button
+                type="button"
+                onClick={() => toggleHelp('help')}
+                aria-expanded={helpTopic === 'help'}
+                className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
               >
                 Need help?
-              </a>
+              </button>
             </div>
+
+            {helpTopic && (
+              <div className="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/30" role="region" aria-label={HELP_TOPICS[helpTopic].title}>
+                <div className="flex items-center justify-between mb-space-2xs">
+                  <span className="font-title-sm text-title-sm text-on-surface font-semibold">
+                    {HELP_TOPICS[helpTopic].title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setHelpTopic(null)}
+                    className="text-on-surface-variant hover:text-on-surface cursor-pointer"
+                    aria-label="Close help"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">close</span>
+                  </button>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 font-body-sm text-body-sm text-on-surface-variant">
+                  {HELP_TOPICS[helpTopic].points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+                {HELP_TOPICS[helpTopic].link && (
+                  <a
+                    href={HELP_TOPICS[helpTopic].link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block mt-space-2xs font-label-sm text-label-sm text-primary font-semibold hover:underline"
+                  >
+                    {HELP_TOPICS[helpTopic].link.text}
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* Submit Button */}
             <div className="pt-space-xs">
