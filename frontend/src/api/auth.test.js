@@ -23,6 +23,31 @@ describe('auth API', () => {
     })
   })
 
+  it('passes the Google profile picture through', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({
+        id: 'ta@ku.th', name: 'Alex Chen', role: 'TA', auth_mode: 'google-oauth2',
+        picture: 'https://lh3.googleusercontent.com/a/photo=s96-c',
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )))
+    const { getMe } = await import('./auth')
+
+    await expect(getMe()).resolves.toMatchObject({
+      name: 'Alex Chen', picture: 'https://lh3.googleusercontent.com/a/photo=s96-c',
+    })
+  })
+
+  it('leaves the picture out when the backend has none', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ id: 'demo-lecturer', name: 'Demo Lecturer', role: 'Lecturer', auth_mode: 'dev', picture: '' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    )))
+    const { getMe } = await import('./auth')
+
+    expect((await getMe()).picture).toBeUndefined()
+  })
+
   it('does not invent a placeholder email for a non-email id', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(
       JSON.stringify({ id: 'demo-student', name: 'Demo Student', role: 'Student', auth_mode: 'dev' }),
