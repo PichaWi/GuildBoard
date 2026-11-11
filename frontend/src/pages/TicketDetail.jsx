@@ -8,6 +8,38 @@ import Toast from '../components/Toast';
 import { getTicket, updateTicket as apiUpdateTicket } from '../api/tickets';
 import { STAFF_OPTIONS, DEFAULTS } from '../config/appConfig';
 
+// Same rule as the backend (src/controllers/at_risk.py):
+// a ticket is at risk when it is not Closed and is due in less than 48 hours.
+const AT_RISK_HOURS = 48;
+
+// Rough progress from the status, since we do not store a real percentage.
+const STATUS_PROGRESS = { Open: 0, 'In-Progress': 50, Closed: 100 };
+
+function getTicketHealth(ticket, now = new Date()) {
+  const status = ticket?.status || 'Open';
+  const progress = STATUS_PROGRESS[status] ?? 0;
+  const due = new Date(ticket?.dueAt || ticket?.dueDate);
+
+  if (status === 'Closed') {
+    return { atRisk: false, label: 'Closed', text: 'This task is closed, so it no longer counts toward the at-risk list.', progress };
+  }
+  if (Number.isNaN(due.getTime())) {
+    return { atRisk: false, label: 'No due date', text: 'This task has no due date, so its risk cannot be checked.', progress };
+  }
+
+  const hoursLeft = (due - now) / (1000 * 60 * 60);
+  if (hoursLeft <= 0) {
+    const days = Math.ceil(-hoursLeft / 24);
+    return { atRisk: true, label: 'Overdue', text: `Overdue by ${days} day${days === 1 ? '' : 's'}. It stays on the At-Risk monitor until it is closed.`, progress };
+  }
+  if (hoursLeft < AT_RISK_HOURS) {
+    const hours = Math.floor(hoursLeft);
+    return { atRisk: true, label: 'At risk', text: `Due in ${hours} hour${hours === 1 ? '' : 's'}. Tasks due within 48 hours show on the At-Risk monitor.`, progress };
+  }
+  const days = Math.floor(hoursLeft / 24);
+  return { atRisk: false, label: 'On track', text: `Due in ${days} days. Not at risk yet.`, progress };
+}
+
 export default function TicketDetail() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -230,6 +262,7 @@ export default function TicketDetail() {
   }
 
   const displayId = ticket?.id ? String(ticket.id).replace(/^AC-/, '') : id;
+  const health = getTicketHealth(ticket);
 
   return (
     <Layout navbarLeftContent={breadcrumbs}>
@@ -582,17 +615,23 @@ export default function TicketDetail() {
                 </div>
               </aside>
 
-              {/* Cohort Impact Context */}
+              {/* Cohort Impact Context (worked out from this ticket, not fixed numbers) */}
               <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-sm border border-outline-variant/20">
                 <div className="flex items-center justify-between pb-space-2xs border-b border-surface-container">
                   <div className="flex items-center gap-space-2xs">
-                    <span className="material-symbols-outlined text-error text-title-md">warning</span>
+                    <span className={`material-symbols-outlined text-title-md ${health.atRisk ? 'text-error' : 'text-primary'}`}>
+                      {health.atRisk ? 'warning' : 'check_circle'}
+                    </span>
                     <h3 className="font-title-md text-title-md text-on-surface font-bold">
                       Cohort Impact
                     </h3>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">
-                    Monitored
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold ${
+                      health.atRisk ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-primary'
+                    }`}
+                  >
+                    {health.label}
                   </span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
