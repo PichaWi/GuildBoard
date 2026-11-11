@@ -21,6 +21,7 @@ function mapBackendTicket(t) {
     dueDate: t.due_at ? new Date(t.due_at).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', year: 'numeric'
     }) : '',
+    dueAt: t.due_at || '', // raw date + time, needed to work out the 48h at-risk rule
     // Additional fields for TicketDetail
     course: '', // Not in backend model yet
     assignee: t.owner,
