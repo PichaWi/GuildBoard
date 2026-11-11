@@ -128,15 +128,16 @@ export default function Login() {
           </div>
         </div>
         <nav aria-label="Support Navigation">
-          <a
-            className="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 group"
-            href="#it-support"
+          <button
+            type="button"
+            onClick={() => toggleHelp('help')}
+            className="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 group cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors">
               support_agent
             </span>
             <span>Campus IT Help Desk</span>
-          </a>
+          </button>
         </nav>
       </header>
 
