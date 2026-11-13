@@ -14,11 +14,14 @@ class UserRole(str, Enum):
 
 
 class AuthenticatedUser:
-    def __init__(self, user_id: str, name: str, role: UserRole, auth_mode: str) -> None:
+    def __init__(
+        self, user_id: str, name: str, role: UserRole, auth_mode: str, picture: str = ""
+    ) -> None:
         self.id = user_id
         self.name = name
         self.role = role
         self.auth_mode = auth_mode
+        self.picture = picture
 
     def as_session_data(self) -> dict[str, str]:
         return {
@@ -26,6 +29,7 @@ class AuthenticatedUser:
             "name": self.name,
             "role": self.role.value,
             "auth_mode": self.auth_mode,
+            "picture": self.picture,
         }
 
 
@@ -102,13 +106,16 @@ def get_current_user(request: Request) -> AuthenticatedUser:
         name = session_user["name"]
         role = session_user["role"]
         auth_mode = session_user["auth_mode"]
-        if not all(isinstance(value, str) for value in (user_id, name, role, auth_mode)):
+        # Sessions created before the picture was stored have no such key.
+        picture = session_user.get("picture", "")
+        if not all(isinstance(value, str) for value in (user_id, name, role, auth_mode, picture)):
             raise TypeError("session identity fields must be strings")
         return AuthenticatedUser(
             user_id=user_id,
             name=name,
             role=UserRole(role),
             auth_mode=auth_mode,
+            picture=picture,
         )
     except (KeyError, TypeError, ValueError):
         request.session.clear()

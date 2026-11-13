@@ -104,6 +104,7 @@ def current_actor(
         name=session_user.name,
         role=UserRole(stored.role),
         auth_mode=session_user.auth_mode,
+        picture=session_user.picture,
     )
 
 

@@ -24,6 +24,10 @@ def get_or_provision_user(db: Session, *, email: str, name: str = "") -> User:
     email = normalize_email(email)
     user = find_user(db, email)
     if user is not None:
+        # A row made by the role script or the seed data has no name, or a placeholder one.
+        if name and user.name != name:
+            user.name = name
+            db.commit()
         return user
 
     user = User(email=email, name=name, role=UserRole.STUDENT.value)

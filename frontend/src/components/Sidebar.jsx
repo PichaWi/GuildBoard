@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoUrl from '../assets/logo.png';
 import { DEFAULTS } from '../config/appConfig';
+import UserAvatar from './UserAvatar';
 
 const ALL_NAV_ITEMS = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard', roles: ['ta', 'lecturer', 'admin'] },
@@ -159,14 +160,10 @@ export default function Sidebar() {
 
       <div className="p-space-sm border-t border-outline-variant/20 bg-surface-container-lowest">
         <div className="flex items-center gap-space-sm px-space-xs py-space-xs bg-surface-container-low rounded-xl">
-          <img
-            alt={user?.name || '{DEFAULTS.profileName}'}
-            className="w-8 h-8 rounded-full object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxRy36P-7hrtg5rnMsquzIJr9xNgbyWo17nUsTvltNY2EnocyWX_L3hiLUagVjHUDqz5eXOYnnd9QRvALGoz-PabZNtgfiR5ROapqzP_nDpgJuOZ3bSO6Q0I9Dh5AYKknn4wQsUgGXjG8UNr4Q_rTNui0QSotJN2oKVBrvZNzDG0nqJpwx7gEI7WuXUXz-qM2VQPYo7N4HkEF0uwczljR4bW1aWIhdi8qPjwRIVnmWeRqQPwwbJ63H"
-          />
+          <UserAvatar user={user} />
           <div className="flex flex-col min-w-0 flex-1">
             <span className="font-title-sm text-title-sm text-on-surface truncate">
-              {user?.name || '{DEFAULTS.profileName}'}
+              {user?.name || DEFAULTS.profileName}
             </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant truncate capitalize">
               {role === 'admin'
