@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import UserAvatar from './UserAvatar';
 
 export default function Navbar({ leftContent }) {
@@ -72,13 +73,7 @@ export default function Navbar({ leftContent }) {
 
         <div className="hidden sm:block h-6 w-px bg-outline-variant/30 mx-space-2xs" />
 
-        <button
-          aria-label="Notifications"
-          className="p-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
-          type="button"
-        >
-          <span className="material-symbols-outlined text-[20px]">notifications</span>
-        </button>
+        <NotificationBell />
 
         {user && (
           <div className="flex items-center gap-space-xs">
