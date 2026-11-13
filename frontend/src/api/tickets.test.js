@@ -36,6 +36,7 @@ describe('tickets API', () => {
       expect.objectContaining({
         id: 17, title: 'Review architecture rubric', ownerRole: 'Teaching Assistant',
         dueDate: 'Oct 28, 2026', assignee: 'Alex Chen', createdBy: 'lecturer@ku.th',
+        dueAt: '2026-10-28T10:00:00Z',
       }),
     ])
   })

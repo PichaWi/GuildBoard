@@ -21,6 +21,9 @@ export default function Calendar() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Filter dropdown: event types the user has unticked
+  const [showFilter, setShowFilter] = useState(false);
+  const [hiddenTypes, setHiddenTypes] = useState(new Set());
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -105,10 +108,25 @@ export default function Calendar() {
     }
   };
 
+  // Filter handlers (event type)
+  const eventTypes = [...new Set(events.map((e) => e.type).filter(Boolean))].sort();
+
+  const toggleType = (type) => {
+    const newSet = new Set(hiddenTypes);
+    if (newSet.has(type)) {
+      newSet.delete(type);
+    } else {
+      newSet.add(type);
+    }
+    setHiddenTypes(newSet);
+  };
+
+  // events that pass both the course checkboxes and the type filter
+  const visibleEvents = events.filter((e) => activeCourses.has(e.course) && !hiddenTypes.has(e.type));
+
   // Export handler
   const handleExport = () => {
-    const filtered = events.filter((e) => activeCourses.has(e.course));
-    const icsContent = generateICS(filtered);
+    const icsContent = generateICS(visibleEvents);
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -139,7 +157,7 @@ export default function Calendar() {
   // 2. Current Month
   for (let day = 1; day <= daysInMonth; day++) {
     const dateKey = formatDateKey(currentYear, currentMonth, day);
-    const dayEvents = events.filter((e) => e.date === dateKey && activeCourses.has(e.course));
+    const dayEvents = visibleEvents.filter((e) => e.date === dateKey);
     const isToday = (currentYear === todayDate.getFullYear() && currentMonth === todayDate.getMonth() && day === todayDate.getDate());
     const dayOfWeekIndex = (firstDayOfWeek + day - 1) % 7;
     const isWeekend = (dayOfWeekIndex === 5 || dayOfWeekIndex === 6);
@@ -163,8 +181,7 @@ export default function Calendar() {
     });
   }
 
-  const filteredDeadlines = events
-    .filter((e) => activeCourses.has(e.course))
+  const filteredDeadlines = visibleEvents
     .slice(0, 4)
     .map(e => ({
       course: e.course,
@@ -270,10 +287,54 @@ export default function Calendar() {
               </div>
 
               <div className="flex items-center gap-space-2xs">
-                <button className="inline-flex items-center gap-space-2xs px-space-sm py-2 bg-surface-container-low hover:bg-surface-container text-on-surface font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer" type="button">
-                  <span className="material-symbols-outlined text-[18px]">filter_list</span>
-                  <span>Filter</span>
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowFilter(!showFilter)}
+                    className={`inline-flex items-center gap-space-2xs px-space-sm py-2 font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer ${
+                      hiddenTypes.size > 0
+                        ? 'bg-secondary-container text-on-secondary-container'
+                        : 'bg-surface-container-low hover:bg-surface-container text-on-surface'
+                    }`}
+                    type="button"
+                    aria-expanded={showFilter}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">filter_list</span>
+                    <span>Filter</span>
+                    {hiddenTypes.size > 0 && (
+                      <span className="text-label-sm font-semibold">({eventTypes.length - hiddenTypes.size}/{eventTypes.length})</span>
+                    )}
+                  </button>
+
+                  {showFilter && (
+                    <div className="absolute right-0 mt-2 w-64 z-20 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg p-space-sm">
+                      <div className="flex items-center justify-between pb-space-2xs mb-space-2xs border-b border-outline-variant/20">
+                        <span className="font-title-sm text-title-sm text-on-surface font-semibold">Event type</span>
+                        <button
+                          onClick={() => setHiddenTypes(new Set())}
+                          className="text-primary hover:underline font-label-sm text-label-sm cursor-pointer"
+                          type="button"
+                        >
+                          Show all
+                        </button>
+                      </div>
+                      {eventTypes.length === 0 ? (
+                        <p className="font-body-sm text-body-sm text-on-surface-variant py-1">No events to filter yet.</p>
+                      ) : (
+                        eventTypes.map((type) => (
+                          <label key={type} className="flex items-center gap-space-xs p-1 rounded hover:bg-surface-container-low cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!hiddenTypes.has(type)}
+                              onChange={() => toggleType(type)}
+                              className="rounded border-outline-variant text-primary-container cursor-pointer"
+                            />
+                            <span className="font-body-sm text-body-sm text-on-surface">{type}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
                 <button onClick={handleExport} className="inline-flex items-center gap-space-2xs px-space-md py-2 bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm rounded-lg shadow-sm transition-all cursor-pointer" type="button">
                   <span className="material-symbols-outlined text-[18px]">file_download</span>
                   <span>Export Calendar</span>
@@ -298,7 +359,7 @@ export default function Calendar() {
                 <WeekView
                   selectedDate={selectedDate}
                   todayDate={todayDate}
-                  calendarEvents={events}
+                  calendarEvents={visibleEvents}
                   activeCourses={activeCourses}
                 />
               )}
@@ -306,14 +367,14 @@ export default function Calendar() {
                 <DayView
                   selectedDate={selectedDate}
                   todayDate={todayDate}
-                  calendarEvents={events}
+                  calendarEvents={visibleEvents}
                   activeCourses={activeCourses}
                   monthNames={monthNames}
                 />
               )}
               {activeView === 'Agenda' && (
                 <AgendaView
-                  calendarEvents={events}
+                  calendarEvents={visibleEvents}
                   activeCourses={activeCourses}
                   todayDate={todayDate}
                   monthNames={monthNames}
