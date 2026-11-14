@@ -17,6 +17,7 @@ from src.controllers.materials import (
 from src.models.material import CourseMaterial
 from src.database import get_db
 from src.models.material import MaterialRead, MAX_FILE_BYTES
+from src.config import settings
 
 router = APIRouter(prefix="/api", tags=["materials"])
 
@@ -154,7 +155,8 @@ async def post_material(
     # Store file content in a simple way (in production: upload to object storage)
     # For now, we'll store it in a local uploads directory
     import os
-    upload_dir = "/app/uploads"
+    import tempfile
+    upload_dir = getattr(settings, "uploads_dir", None) or os.path.join(tempfile.gettempdir(), "guildboard_uploads")
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, f"{material.id}_{material.material_key}_v{material.version}.zip")
     with open(file_path, "wb") as f:
@@ -198,7 +200,9 @@ def download_material(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Material {material_id} not found")
 
     import os
-    file_path = f"/app/uploads/{material_id}_{material.material_key}_v{material.version}.zip"
+    import tempfile
+    upload_dir = getattr(settings, "uploads_dir", None) or os.path.join(tempfile.gettempdir(), "guildboard_uploads")
+    file_path = os.path.join(upload_dir, f"{material_id}_{material.material_key}_v{material.version}.zip")
     if not os.path.exists(file_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk")
 
