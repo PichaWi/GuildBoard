@@ -3,6 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import Toast from '../components/Toast';
 import { DEFAULTS } from '../config/appConfig';
+import { INITIAL_MATERIALS } from '../mock/materialsData.jsx';
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export default function CourseMaterials() {
   const { user } = useAuth();
@@ -73,6 +76,13 @@ export default function CourseMaterials() {
       setIsLoading(true);
       setError(null);
 
+      if (USE_MOCK) {
+        // Simulate network delay
+        await new Promise(r => setTimeout(r, 300));
+        setMaterials(INITIAL_MATERIALS);
+        return;
+      }
+
       // TODO: Backend Dev - Replace placeholder fetch with real DB query / API route.
       // Expected backend endpoint: GET /api/materials
       // Expected response schema: Array of Material objects:
@@ -115,29 +125,65 @@ export default function CourseMaterials() {
     setIsUploading(true);
 
     try {
-      // TODO: Backend Dev - Implement multipart/form-data upload or JSON payload to POST /api/materials
-      // Requires authentication header and file storage (S3, GCS, or local disk).
-      const payload = new FormData();
-      payload.append('title', uploadFormData.title);
-      payload.append('course', uploadFormData.course);
-      payload.append('category', uploadFormData.category);
-      payload.append('module', uploadFormData.module);
-      payload.append('description', uploadFormData.description);
-      if (uploadFormData.file) {
-        payload.append('file', uploadFormData.file);
+      let createdMaterial;
+
+      if (USE_MOCK) {
+        // Simulate network delay and successful upload
+        await new Promise(r => setTimeout(r, 800));
+
+        // Generate mock material from form data
+        const newId = Math.max(...INITIAL_MATERIALS.map(m => m.id), ...materials.map(m => m.id)) + 1;
+        const fileExt = uploadFormData.file.name.toLowerCase().substring(uploadFormData.file.name.lastIndexOf('.') + 1);
+        const fileSizeMB = (uploadFormData.file.size / (1024 * 1024)).toFixed(1);
+
+        createdMaterial = {
+          id: newId,
+          material_key: uploadFormData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 64),
+          version: 1,
+          title: uploadFormData.title,
+          description: uploadFormData.description,
+          course: uploadFormData.course,
+          module: uploadFormData.module,
+          category: uploadFormData.category,
+          file_name: uploadFormData.file.name,
+          file_size_bytes: uploadFormData.file.size,
+          fileSize: `${fileSizeMB} MB`,
+          fileType: fileExt,
+          is_published: true,
+          publishedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          downloadCount: 0,
+          author: user?.name || 'Current User',
+          authorRole: user?.role || 'Lecturer',
+          uploaded_by: user?.email || 'user@ku.th',
+          created_at: new Date().toISOString(),
+          event_id: null,
+        };
+      } else {
+        // TODO: Backend Dev - Implement multipart/form-data upload or JSON payload to POST /api/materials
+        // Requires authentication header and file storage (S3, GCS, or local disk).
+        const payload = new FormData();
+        payload.append('title', uploadFormData.title);
+        payload.append('course', uploadFormData.course);
+        payload.append('category', uploadFormData.category);
+        payload.append('module', uploadFormData.module);
+        payload.append('description', uploadFormData.description);
+        if (uploadFormData.file) {
+          payload.append('file', uploadFormData.file);
+        }
+
+        const response = await fetch('/api/materials', {
+          method: 'POST',
+          // TODO: Backend Dev - include Authorization token header if required
+          body: payload,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed with status ${response.status}`);
+        }
+
+        createdMaterial = await response.json();
       }
 
-      const response = await fetch('/api/materials', {
-        method: 'POST',
-        // TODO: Backend Dev - include Authorization token header if required
-        body: payload,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed with status ${response.status}`);
-      }
-
-      const createdMaterial = await response.json();
       setMaterials((prev) => [createdMaterial, ...prev]);
 
       setToast({
