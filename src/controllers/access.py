@@ -20,6 +20,8 @@ class Action(str, Enum):
     VIEW_AT_RISK = "view_at_risk"
     RECORD_CONSULTATION = "record_consultation"
     SEARCH_CONSULTATIONS = "search_consultations"
+    CREATE_MATERIAL = "create_material"
+    VIEW_UNPUBLISHED_MATERIALS = "view_unpublished_materials"
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,14 @@ PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.SEARCH_CONSULTATIONS: Rule(
         roles=_TA_ONLY,
         denied_detail="Only TAs can search consultation sessions.",
+    ),
+    Action.CREATE_MATERIAL: Rule(
+        roles=_STAFF,
+        denied_detail="Students are not permitted to upload materials.",
+    ),
+    Action.VIEW_UNPUBLISHED_MATERIALS: Rule(
+        roles=_STAFF,
+        denied_detail="Only Lecturers, TAs and Admins can view unpublished materials.",
     ),
 }
 
