@@ -56,14 +56,14 @@ def latest_reminders(db: Session, ticket_ids: list[int]) -> dict[int, TicketRemi
     return latest
 
 
-def remind_all_at_risk(db: Session, now: datetime, user: AuthenticatedUser) -> int:
+def remind_all_at_risk(db: Session, now: datetime, user: AuthenticatedUser) -> list[Ticket]:
     """Batch Ping: one reminder for every ticket that is at risk right now."""
     tickets = list_at_risk(db, now)
     for ticket in tickets:
         db.add(TicketReminder(ticket_id=ticket.id,
                kind="reminder", sent_by=user.name))
     db.commit()
-    return len(tickets)
+    return tickets
 
 
 def reminder_to_dict(reminder: TicketReminder) -> dict:

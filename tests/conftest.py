@@ -120,3 +120,12 @@ def google(monkeypatch):
         return fake
 
     return _use
+
+
+@pytest.fixture(autouse=True)
+def no_real_email(monkeypatch):
+    """Tests never send real email, even if .env has Gmail settings."""
+    from src.config import settings
+
+    monkeypatch.setattr(settings, "smtp_username", "")
+    monkeypatch.setattr(settings, "smtp_password", "")

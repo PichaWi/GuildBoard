@@ -94,7 +94,7 @@ def test_batch_ping_reminds_only_at_risk_tickets(client, sign_in, session_factor
 
     response = client.post("/api/at-risk/remind")
 
-    assert response.json() == {"count": 2}
+    assert response.json()["count"] == 2
     assert len(client.get(f"/api/tickets/{overdue}/reminders").json()) == 1
     assert len(client.get(f"/api/tickets/{nearing}/reminders").json()) == 1
 
