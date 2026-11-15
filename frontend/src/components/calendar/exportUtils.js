@@ -1,4 +1,4 @@
-// Calendar export: one place for every format (.ics, CSV; Excel and PDF later).
+// Calendar export: one place for every format (.ics, CSV, Excel, PDF).
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -113,6 +113,54 @@ export async function generateXLSX(events) {
     columns: EXPORT_COLUMNS.map(([key]) => ({ width: EXCEL_WIDTHS[key] })),
     stickyRowsCount: 1, // keep the header visible while scrolling
   }).toBlob();
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────────
+
+// Standard PDF fonts have no Thai letters, so we embed Sarabun (SIL Open Font License,
+// see public/fonts/Sarabun-OFL.txt). It is loaded only when someone exports a PDF.
+async function loadThaiFont(fontUrl) {
+  const response = await fetch(fontUrl);
+  if (!response.ok) throw new Error(`Could not load the PDF font (${response.status})`);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+// Returns a Promise<Blob> of an A4 landscape PDF with one table row per event.
+export async function generatePDF(events, { title = 'GuildBoard Course Calendar', now = new Date(), fontUrl = '/fonts/Sarabun-Regular.ttf' } = {}) {
+  const [{ jsPDF }, { autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  doc.addFileToVFS('Sarabun-Regular.ttf', await loadThaiFont(fontUrl));
+  doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal');
+  doc.setFont('Sarabun', 'normal');
+
+  doc.setFontSize(16);
+  doc.text(title, 14, 16);
+  doc.setFontSize(9);
+  doc.setTextColor(90);
+  const generated = now.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  doc.text(`${events.length} events · Exported ${generated}`, 14, 22);
+
+  const columns = EXPORT_COLUMNS.filter(([key]) => key !== 'description');
+  autoTable(doc, {
+    startY: 27,
+    head: [columns.map(([, label]) => label)],
+    body: exportRows(events).map((row) => columns.map(([key]) => row[key])),
+    styles: { font: 'Sarabun', fontSize: 9, cellPadding: 2 },
+    headStyles: { font: 'Sarabun', fontStyle: 'normal', fillColor: [31, 92, 66], textColor: 255 },
+    alternateRowStyles: { fillColor: [244, 247, 245] },
+    columnStyles: { 3: { cellWidth: 70 } }, // Title
+    didDrawPage: () => {
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      doc.text(`Page ${doc.getNumberOfPages()}`, doc.internal.pageSize.getWidth() - 25, doc.internal.pageSize.getHeight() - 8);
+    },
+  });
+  return doc.output('blob');
 }
 
 // ── Download helper ────────────────────────────────────────────────────────────

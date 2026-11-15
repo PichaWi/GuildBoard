@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { generateCSV, generateICS, parseTimeRange } from './exportUtils';
 
 const EVENTS = [
-  { id: 2, date: '2026-11-20', time: '13:00:00 - 16:00:00', title: 'KE Ontology, Design', course: 'KE',
-    type: 'Assignment Due', location: 'Room 203', instructor: 'Aj. Milk', description: 'Say "hi"' },
-  { id: 1, date: '2026-11-12', time: '9:00 AM - 12:00 PM', title: 'ISP Iteration 4 Report', course: 'ISP',
-    type: 'Project Milestone', location: '', instructor: 'Aj. Suwichak', description: '' },
+  {
+    id: 2, date: '2026-11-20', time: '13:00:00 - 16:00:00', title: 'KE Ontology, Design', course: 'KE',
+    type: 'Assignment Due', location: 'Room 203', instructor: 'Aj. Milk', description: 'Say "hi"'
+  },
+  {
+    id: 1, date: '2026-11-12', time: '9:00 AM - 12:00 PM', title: 'ISP Iteration 4 Report', course: 'ISP',
+    type: 'Project Milestone', location: '', instructor: 'Aj. Suwichak', description: ''
+  },
 ];
 
 describe('parseTimeRange', () => {
@@ -81,5 +85,25 @@ describe('generateXLSX', () => {
     // .xlsx files are zip archives, which always start with "PK".
     expect(String.fromCharCode(bytes[0], bytes[1])).toBe('PK');
     expect(bytes.length).toBeGreaterThan(1000);
+  });
+});
+
+
+describe('generatePDF', () => {
+  it('builds a PDF with the Thai font embedded', async () => {
+    const { readFileSync } = await import('fs');
+    const font = readFileSync('public/fonts/Sarabun-Regular.ttf');
+    vi.stubGlobal('fetch', async () => ({
+      ok: true,
+      arrayBuffer: async () => font.buffer.slice(font.byteOffset, font.byteOffset + font.length),
+    }));
+    const { generatePDF } = await import('./exportUtils');
+
+    const bytes = await readBytes(await generatePDF(EVENTS));
+    const text = new TextDecoder('latin1').decode(bytes);
+
+    expect(text.startsWith('%PDF-')).toBe(true);
+    expect(text).toContain('Sarabun'); // the Thai-capable font is inside the file
+    vi.unstubAllGlobals();
   });
 });

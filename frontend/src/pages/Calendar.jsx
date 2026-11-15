@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { monthNames } from '../mock/calendarData';
 import { formatDateKey, getWeekStart } from '../components/calendar/calendarUtils';
-import { downloadFile, generateCSV, generateICS, generateXLSX } from '../components/calendar/exportUtils';
+import { downloadFile, generateCSV, generateICS, generatePDF, generateXLSX } from '../components/calendar/exportUtils';
 import MonthView from '../components/calendar/MonthView';
 import WeekView from '../components/calendar/WeekView';
 import DayView from '../components/calendar/DayView';
@@ -131,6 +131,7 @@ export default function Calendar() {
     { id: 'ics', label: 'Calendar file (.ics)', hint: 'Google Calendar, Outlook, Apple Calendar' },
     { id: 'csv', label: 'CSV (.csv)', hint: 'Opens in Excel or Google Sheets' },
     { id: 'xlsx', label: 'Excel (.xlsx)', hint: 'Formatted spreadsheet with a frozen header' },
+    { id: 'pdf', label: 'PDF (.pdf)', hint: 'Printable table, A4 landscape' },
   ];
 
   const handleExport = async (format) => {
@@ -139,6 +140,7 @@ export default function Calendar() {
     if (format === 'ics') downloadFile(generateICS(visibleEvents), `${name}.ics`, 'text/calendar;charset=utf-8');
     if (format === 'csv') downloadFile(generateCSV(visibleEvents), `${name}.csv`, 'text/csv;charset=utf-8');
     if (format === 'xlsx') downloadFile(await generateXLSX(visibleEvents), `${name}.xlsx`);
+    if (format === 'pdf') downloadFile(await generatePDF(visibleEvents), `${name}.pdf`);
   };
 
   // Calendar generation logic

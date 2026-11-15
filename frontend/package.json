@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "jspdf": "4.2.1",
+    "jspdf-autotable": "5.0.9",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "write-excel-file": "4.1.1"
