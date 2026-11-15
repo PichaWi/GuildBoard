@@ -538,6 +538,7 @@ export default function OperationsDashboard() {
                             key={student.id}
                             student={student}
                             onAction={handleAtRiskAction}
+                            onOpen={() => navigate(`/tasks/${student.id}`)}
                           />
                         ))
                       )}

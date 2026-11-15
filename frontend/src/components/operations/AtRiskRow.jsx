@@ -1,7 +1,7 @@
 import React from 'react';
 import { RiskBadge, EmailIcon, FlagIcon, DotsIcon } from './Badges';
 
-export default function AtRiskRow({ student, onAction }) {
+export default function AtRiskRow({ student, onAction, onOpen }) {
   return (
     <tr className={student.rowClass}>
       <td className="py-space-md px-space-lg">
@@ -19,7 +19,13 @@ export default function AtRiskRow({ student, onAction }) {
       </td>
       <td className="py-space-md px-space-md">
         <div className="flex flex-col">
-          <span className="font-title-sm text-title-sm text-primary">{student.taskTitle}</span>
+          <span
+            onClick={onOpen}
+            className="font-title-sm text-title-sm text-primary font-semibold hover:underline cursor-pointer"
+            title="Open ticket details"
+          >
+            {student.taskTitle}
+          </span>
           <span className="text-body-sm font-body-sm text-on-surface-variant">{student.course}</span>
         </div>
       </td>
@@ -85,8 +91,8 @@ export default function AtRiskRow({ student, onAction }) {
           {/* Activity Log */}
           <button
             className="p-1 rounded-lg hover:bg-surface-container text-on-surface-variant"
-            onClick={() => onAction('log', student.name)}
-            title="Activity Log"
+            onClick={onOpen}
+            title="Open ticket details"
             type="button"
           >
             <DotsIcon />
