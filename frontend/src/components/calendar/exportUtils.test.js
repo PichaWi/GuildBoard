@@ -62,3 +62,24 @@ describe('generateCSV', () => {
     expect(generateCSV([]).startsWith('\uFEFF')).toBe(true);
   });
 });
+
+
+function readBytes(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(new Uint8Array(reader.result));
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
+describe('generateXLSX', () => {
+  it('builds a real Excel (.xlsx) file', async () => {
+    const { generateXLSX } = await import('./exportUtils');
+    const blob = await generateXLSX(EVENTS);
+    const bytes = await readBytes(blob);
+
+    // .xlsx files are zip archives, which always start with "PK".
+    expect(String.fromCharCode(bytes[0], bytes[1])).toBe('PK');
+    expect(bytes.length).toBeGreaterThan(1000);
+  });
+});

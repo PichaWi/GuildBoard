@@ -98,6 +98,23 @@ export function generateCSV(events) {
   return '\uFEFF' + [header, ...rows].join('\r\n') + '\r\n';
 }
 
+// ── Excel (.xlsx) ──────────────────────────────────────────────────────────────
+
+const EXCEL_WIDTHS = { date: 12, start: 8, end: 8, title: 40, course: 10, type: 20, location: 18, instructor: 20, description: 40 };
+
+// Returns a Promise<Blob>. The library is loaded only when someone exports to Excel,
+// so it does not slow down the first page load.
+export async function generateXLSX(events) {
+  const { default: writeExcelFile } = await import('write-excel-file/browser');
+  const header = EXPORT_COLUMNS.map(([, label]) => ({ value: label, fontWeight: 'bold', backgroundColor: '#E8F0EC' }));
+  const rows = exportRows(events).map((row) => EXPORT_COLUMNS.map(([key]) => ({ value: row[key], type: String })));
+  return writeExcelFile([header, ...rows], {
+    sheet: 'Course Calendar',
+    columns: EXPORT_COLUMNS.map(([key]) => ({ width: EXCEL_WIDTHS[key] })),
+    stickyRowsCount: 1, // keep the header visible while scrolling
+  }).toBlob();
+}
+
 // ── Download helper ────────────────────────────────────────────────────────────
 
 export function downloadFile(content, filename, mimeType) {

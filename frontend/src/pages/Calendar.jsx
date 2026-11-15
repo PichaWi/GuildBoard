@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { monthNames } from '../mock/calendarData';
 import { formatDateKey, getWeekStart } from '../components/calendar/calendarUtils';
-import { downloadFile, generateCSV, generateICS } from '../components/calendar/exportUtils';
+import { downloadFile, generateCSV, generateICS, generateXLSX } from '../components/calendar/exportUtils';
 import MonthView from '../components/calendar/MonthView';
 import WeekView from '../components/calendar/WeekView';
 import DayView from '../components/calendar/DayView';
@@ -130,13 +130,15 @@ export default function Calendar() {
   const EXPORT_FORMATS = [
     { id: 'ics', label: 'Calendar file (.ics)', hint: 'Google Calendar, Outlook, Apple Calendar' },
     { id: 'csv', label: 'CSV (.csv)', hint: 'Opens in Excel or Google Sheets' },
+    { id: 'xlsx', label: 'Excel (.xlsx)', hint: 'Formatted spreadsheet with a frozen header' },
   ];
 
-  const handleExport = (format) => {
+  const handleExport = async (format) => {
     setShowExport(false);
     const name = 'guildboard_calendar';
     if (format === 'ics') downloadFile(generateICS(visibleEvents), `${name}.ics`, 'text/calendar;charset=utf-8');
     if (format === 'csv') downloadFile(generateCSV(visibleEvents), `${name}.csv`, 'text/csv;charset=utf-8');
+    if (format === 'xlsx') downloadFile(await generateXLSX(visibleEvents), `${name}.xlsx`);
   };
 
   // Calendar generation logic
@@ -276,8 +278,8 @@ export default function Calendar() {
                     key={view}
                     onClick={() => setActiveView(view)}
                     className={`px-space-sm py-1 font-title-sm text-title-sm rounded-md transition-all cursor-pointer ${activeView === view
-                        ? 'bg-primary-container text-on-primary shadow-sm'
-                        : 'hover:text-on-surface'
+                      ? 'bg-primary-container text-on-primary shadow-sm'
+                      : 'hover:text-on-surface'
                       }`}
                     type="button"
                   >
@@ -291,8 +293,8 @@ export default function Calendar() {
                   <button
                     onClick={() => setShowFilter(!showFilter)}
                     className={`inline-flex items-center gap-space-2xs px-space-sm py-2 font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer ${hiddenTypes.size > 0
-                        ? 'bg-secondary-container text-on-secondary-container'
-                        : 'bg-surface-container-low hover:bg-surface-container text-on-surface'
+                      ? 'bg-secondary-container text-on-secondary-container'
+                      : 'bg-surface-container-low hover:bg-surface-container text-on-surface'
                       }`}
                     type="button"
                     aria-expanded={showFilter}
