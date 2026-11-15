@@ -11,7 +11,7 @@ import CreateTicketModal from '../components/operations/CreateTicketModal';
 import Toast from '../components/operations/Toast';
 import { getInitials, PriorityBadge, StatusBadge } from '../components/operations/Badges';
 import { getTickets, createTicket as apiCreateTicket, updateTicket as apiUpdateTicket } from '../api/tickets';
-import { getAtRisk } from '../api/atRisk';
+import { getAtRisk, sendReminder, remindAllAtRisk, reminderResultMessage } from '../api/atRisk';
 import { DEFAULTS } from '../config/appConfig';
 
 export default function OperationsDashboard() {
@@ -145,17 +145,25 @@ export default function OperationsDashboard() {
     }
   };
 
-  const handleAtRiskAction = (type, studentName) => {
-    if (type === 'email') showToast(`Automated reminder & extension notice dispatched to ${studentName}`);
-    else if (type === 'flag') showToast(`${studentName} assigned to Lead TA 1-on-1 breakout clinic`);
-    else if (type === 'email-reminder') showToast(`Reminder sent to ${studentName}`);
-    else if (type === 'assign-ta') showToast(`TA assigned for ${studentName}`);
-    else if (type === 'check-in') showToast(`Opening check-in flow for ${studentName}`);
-    else showToast(`Opening complete LMS submission log for ${studentName}`);
+  const handleAtRiskAction = async (type, student) => {
+    const kind = type === 'flag' || type === 'assign-ta' ? 'flag' : 'reminder';
+    try {
+      const result = await sendReminder(student.id, kind);
+      showToast(reminderResultMessage(student.name, kind, result.email));
+      fetchAtRisk(); // show "Reminded just now by ..."
+    } catch (err) {
+      showToast(`Could not save the reminder: ${err.message}`);
+    }
   };
 
-  const handleBatchReminder = () => {
-    showToast(`Demo only: reminders for ${atRiskStudents.length} at-risk tickets are not sent yet`);
+  const handleBatchReminder = async () => {
+    try {
+      const { count, emailed } = await remindAllAtRisk();
+      showToast(`Reminders saved for ${count} at-risk tickets, ${emailed} emailed`);
+      fetchAtRisk();
+    } catch (err) {
+      showToast(`Could not send reminders: ${err.message}`);
+    }
   };
 
   // ── Derived display values (update KPI cards dynamically) ──────────────────
