@@ -15,29 +15,6 @@ export function getWeekStart(date) {
   return d;
 }
 
-// Helper: generate .ics content for export
-export function generateICS(events) {
-  const pad = (n) => String(n).padStart(2, '0');
-  const formatICSDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-  };
-
-  let ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//GuildBoard//Course Calendar//EN\r\nCALSCALE:GREGORIAN\r\n`;
-
-  events.forEach((evt) => {
-    ics += `BEGIN:VEVENT\r\n`;
-    ics += `DTSTART;VALUE=DATE:${formatICSDate(evt.date)}\r\n`;
-    ics += `DTEND;VALUE=DATE:${formatICSDate(evt.date)}\r\n`;
-    ics += `SUMMARY:${evt.title}\r\n`;
-    ics += `DESCRIPTION:${evt.course} - ${evt.type} | ${evt.time} | ${evt.instructor}\r\n`;
-    ics += `LOCATION:${evt.location}\r\n`;
-    ics += `END:VEVENT\r\n`;
-  });
-
-  ics += `END:VCALENDAR\r\n`;
-  return ics;
-}
 
 export const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export const DAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
