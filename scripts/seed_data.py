@@ -27,12 +27,16 @@ USERS = [
 ]
 
 
+OWNER_EMAILS = {"Picha W": "ta.demo@ku.th", "Prima X": "ta2.demo@ku.th"}
+
+
 def is_empty(db, model) -> bool:
     return db.scalar(select(func.count()).select_from(model)) == 0
 
 
 def seed(db) -> dict[str, int]:
-    added = dict.fromkeys(["users", "events", "materials", "tickets", "consultations"], 0)
+    added = dict.fromkeys(
+        ["users", "events", "materials", "tickets", "consultations"], 0)
     now = datetime.now(timezone.utc)
     today = date.today()
 
@@ -46,7 +50,8 @@ def seed(db) -> dict[str, int]:
         for title, course, kind, days, published in [
             ("Software Communication Skills", "SCS", "Lecture & Workshop", 2, True),
             ("KE: Ontology & Model Milestone", "KE", "Project Milestone", 4, True),
-            ("ISP Milestone 2: Architecture Review", "ISP", "Project Milestone", 7, True),
+            ("ISP Milestone 2: Architecture Review",
+             "ISP", "Project Milestone", 7, True),
             ("ISP Iteration 5 Planning (draft)", "ISP", "Lab Session", 10, False),
         ]:
             db.add(Event(
@@ -62,11 +67,13 @@ def seed(db) -> dict[str, int]:
         first_event = db.scalar(select(Event).order_by(Event.id))
         for key, version, title, published in [
             ("isp-architecture-guide", 1, "ISP Architecture Guidelines", False),
-            ("isp-architecture-guide", 2, "ISP Architecture Guidelines", True),  # latest published
+            # latest published
+            ("isp-architecture-guide", 2, "ISP Architecture Guidelines", True),
             ("ke-ontology-slides", 1, "KE Ontology Lecture Slides", True),
         ]:
             db.add(CourseMaterial(
-                material_key=key, version=version, title=title, course_code=title.split()[0],
+                material_key=key, version=version, title=title, course_code=title.split()[
+                    0],
                 file_name=f"{key}-v{version}.pdf", file_size_bytes=1_400_000, is_published=published,
                 event_id=first_event.id if first_event else None, uploaded_by="lecturer.demo@ku.th",
             ))
@@ -74,22 +81,30 @@ def seed(db) -> dict[str, int]:
 
     if is_empty(db, Ticket):
         for title, owner, priority, status, hours in [
-            ("ISP Milestone 2 Code Review", "Alex Chen", "High", "In-Progress", 20),        # at risk: due < 48 h
-            ("KE Ontology Schema Check", "Ploy Srisuk", "Medium", "Open", 24 * 5),          # normal
-            ("SCS Lab Presentation Rubric", "Alex Chen", "Low", "Closed", -24 * 3),         # closed: never at risk
-            ("FM Essay Feedback Sync", "Ploy Srisuk", "High", "Open", -30),                 # at risk: overdue
-            ("Architecture Consultation Prep", "Alex Chen", "Medium", "In-Progress", 24 * 4),
+            ("ISP Milestone 2 Code Review", "Picha W", "High",
+             "In-Progress", 20),        # at risk: due < 48 h
+            ("KE Ontology Schema Check", "Prima X",
+             "Medium", "Open", 24 * 5),          # normal
+            ("SCS Lab Presentation Rubric", "Picha W", "Low",
+             "Closed", -24 * 3),         # closed: never at risk
+            ("FM Essay Feedback Sync", "Prima X", "High",
+             "Open", -30),                 # at risk: overdue
+            ("Architecture Consultation Prep",
+             "Picha W", "Medium", "In-Progress", 24 * 4),
         ]:
             db.add(Ticket(
-                title=title, owner=owner, owner_role="TA", priority=priority, status=status,
+                title=title, owner=owner, owner_role="TA", owner_email=OWNER_EMAILS.get(owner, ""),
+                priority=priority, status=status,
                 due_at=now + timedelta(hours=hours), created_by="lecturer.demo@ku.th",
             ))
             added["tickets"] += 1
 
     if is_empty(db, ConsultationSession):
         for name, sid, course, topic, days in [
-            ("Sarah Jenkins", "64010892", "ISP", "MVC layering for the architecture submission", -2),
-            ("Alexei Kozlov", "64010915", "KE", "OWL restrictions and competency questions", -1),
+            ("Sarah Jenkins", "64010892", "ISP",
+             "MVC layering for the architecture submission", -2),
+            ("Alexei Kozlov", "64010915", "KE",
+             "OWL restrictions and competency questions", -1),
             ("Sarah Jenkins", "64010892", "ISP", "Sequence diagram error path", 0),
         ]:
             db.add(ConsultationSession(
@@ -107,7 +122,8 @@ def main() -> int:
     init_db()  # creates tables only for the SQLite fallback; PostgreSQL uses Alembic
     with SessionLocal() as db:
         added = seed(db)
-    print("Seed complete: added " + ", ".join(f"{n} {k}" for k, n in added.items()) + ".")
+    print("Seed complete: added " +
+          ", ".join(f"{n} {k}" for k, n in added.items()) + ".")
     return 0
 
 

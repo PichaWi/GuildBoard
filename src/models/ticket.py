@@ -28,18 +28,26 @@ def as_utc(value: datetime) -> datetime:
 class Ticket(Base):
     __tablename__ = "tickets"
     __table_args__ = (
-        CheckConstraint("priority IN ('Low', 'Medium', 'High')", name="ck_tickets_priority"),
-        CheckConstraint("status IN ('Open', 'In-Progress', 'Closed')", name="ck_tickets_status"),
+        CheckConstraint("priority IN ('Low', 'Medium', 'High')",
+                        name="ck_tickets_priority"),
+        CheckConstraint(
+            "status IN ('Open', 'In-Progress', 'Closed')", name="ck_tickets_status"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     owner: Mapped[str] = mapped_column(String(120), nullable=False)
-    owner_role: Mapped[str] = mapped_column(String(64), nullable=False, default="")
-    priority: Mapped[str] = mapped_column(String(16), nullable=False, default="Medium")
-    status: Mapped[str] = mapped_column(String(16), nullable=False, default="Open", index=True)
-    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    owner_role: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="")
+    owner_email: Mapped[str] = mapped_column(
+        String(320), nullable=False, default="", server_default="")
+    priority: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="Medium")
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="Open", index=True)
+    due_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True)
     created_by: Mapped[str] = mapped_column(String(320), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
@@ -49,11 +57,16 @@ class Ticket(Base):
     )
 
 
+EMAIL_OR_EMPTY = r"^$|^[^@\s]+@[^@\s]+\.[^@\s]+$"
+
+
 class TicketCreate(BaseModel):
     title: str = Field(min_length=1, max_length=120)
     description: str = ""
     owner: str = Field(min_length=1, max_length=120)
     owner_role: str = Field(default="", max_length=64)
+    owner_email: str = Field(
+        default="", max_length=320, pattern=EMAIL_OR_EMPTY)
     priority: Priority = "Medium"
     status: Status = "Open"
     due_at: datetime
@@ -71,6 +84,8 @@ class TicketUpdate(BaseModel):
     description: str | None = None
     owner: str | None = Field(default=None, min_length=1, max_length=120)
     owner_role: str | None = Field(default=None, max_length=64)
+    owner_email: str | None = Field(
+        default=None, max_length=320, pattern=EMAIL_OR_EMPTY)
     priority: Priority | None = None
     status: Status | None = None
     due_at: datetime | None = None
@@ -89,6 +104,7 @@ class TicketRead(BaseModel):
     description: str
     owner: str
     owner_role: str
+    owner_email: str = ""
     priority: Priority
     status: Status
     due_at: datetime

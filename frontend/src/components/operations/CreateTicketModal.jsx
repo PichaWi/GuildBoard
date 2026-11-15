@@ -19,6 +19,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSave }) {
       description: fields['form-task-notes'].value,
       owner,
       ownerRole: owner.includes('TA') ? 'Teaching Assistant' : 'Faculty Instructor',
+      ownerEmail: fields['form-task-owner-email'].value.trim(),
       priority: fields['form-task-priority'].value,
       status: fields['form-task-status'].value,
       dueDate: formattedDate || 'Mar 28, 2025',
@@ -77,6 +78,19 @@ export default function CreateTicketModal({ isOpen, onClose, onSave }) {
               type="text"
             />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-label-md font-label-md text-on-surface" htmlFor="form-task-owner-email">
+              Owner Email <span className="text-on-surface-variant font-normal">(optional, for reminder emails)</span>
+            </label>
+            <input
+              className="h-[38px] px-space-sm rounded-lg bg-surface-container-low text-on-surface focus:outline-none"
+              id="form-task-owner-email"
+              name="form-task-owner-email"
+              placeholder="e.g. alex.c@ku.th"
+              type="email"
+            />
+          </div>
+
 
           {/* Owner & Due Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
