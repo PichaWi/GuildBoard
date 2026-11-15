@@ -24,8 +24,12 @@ function mapBackendAtRiskItem(item) {
     taskTitle: item.title,
     course: '', // Not in backend model
     dueDate: dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    dueDateClass: isOverdue ? 'py-space-md px-space-md font-medium text-red-950' : 'py-space-md px-space-md font-medium text-amber-950',
-    rowClass: isOverdue ? 'bg-red-50/80 hover:bg-red-100/70 transition-colors' : 'bg-amber-50/80 hover:bg-amber-100/70 transition-colors',
+    dueDateClass: isOverdue
+      ? 'py-space-md px-space-md font-medium text-red-950 dark:text-red-200'
+      : 'py-space-md px-space-md font-medium text-amber-950 dark:text-amber-200',
+    rowClass: isOverdue
+      ? 'bg-red-50/80 hover:bg-red-100/70 dark:bg-red-950/40 dark:hover:bg-red-900/40 transition-colors'
+      : 'bg-amber-50/80 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 transition-colors',
     avatarClass: isOverdue
       ? 'w-9 h-9 rounded-full bg-red-200 text-red-900 font-title-sm text-title-sm flex items-center justify-center shrink-0'
       : 'w-9 h-9 rounded-full bg-amber-200 text-amber-900 font-title-sm text-title-sm flex items-center justify-center shrink-0',

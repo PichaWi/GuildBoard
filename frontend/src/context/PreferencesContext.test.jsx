@@ -1,7 +1,14 @@
 import React from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PreferencesProvider, loadPreferences, usePreferences } from './PreferencesContext';
+
+
+function DarkSwitch() {
+  const { setPreference } = usePreferences();
+  return <button type="button" onClick={() => setPreference('darkMode', true)}>dark</button>;
+}
+
 
 function Probe() {
   const { preferences, setPreference } = usePreferences();
@@ -12,7 +19,11 @@ function Probe() {
   );
 }
 
-afterEach(() => localStorage.clear());
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  document.documentElement.classList.remove('dark');
+});
 
 describe('preferences', () => {
   it('uses defaults when nothing is saved', () => {
@@ -30,5 +41,14 @@ describe('preferences', () => {
   it('ignores broken saved data', () => {
     localStorage.setItem('guildboard_preferences', '{not json');
     expect(loadPreferences().language).toBe('en');
+  });
+
+  it('turns dark mode on for the whole page', () => {
+    render(<PreferencesProvider><DarkSwitch /></PreferencesProvider>);
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+
+    act(() => screen.getByRole('button').click());
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 });

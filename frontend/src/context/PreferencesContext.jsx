@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 // Personal display settings, saved in this browser (localStorage).
 const STORAGE_KEY = 'guildboard_preferences';
@@ -35,6 +35,10 @@ export function PreferencesProvider({ children }) {
     });
   }, []);
 
+  // Dark mode: the colours in index.css switch when <html> has class="dark".
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', preferences.darkMode);
+  }, [preferences.darkMode]);
   return (
     <PreferencesContext.Provider value={{ preferences, setPreference }}>
       {children}
