@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import logging
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
@@ -106,6 +107,8 @@ async def google_callback(request: Request):
 
     request.session.clear()
     request.session["user"] = user.as_session_data()
+    # When this session started, so "Sign Out Everywhere" can end it later.
+    request.session["issued_at"] = datetime.now(timezone.utc).timestamp()
     return RedirectResponse(
         url=settings.frontend_url(POST_LOGIN_PATH),
         status_code=status.HTTP_303_SEE_OTHER,

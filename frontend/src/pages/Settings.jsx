@@ -1,10 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePreferences } from '../context/PreferencesContext';
 import Layout from '../components/Layout';
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, signOutEverywhere } = useAuth();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
+
+  const handleSignOutEverywhere = async () => {
+    if (!window.confirm('Sign out on every device and browser? You will need to sign in again.')) return;
+    setSigningOut(true);
+    setSignOutError('');
+    try {
+      await signOutEverywhere();
+      navigate('/login');
+    } catch (err) {
+      setSignOutError(err.message || 'Could not sign out everywhere. Please try again.');
+      setSigningOut(false);
+    }
+  };
   const { preferences, setPreference } = usePreferences();
 
   // What the app actually knows about how this user signed in.
@@ -161,11 +178,21 @@ export default function Settings() {
                   <span className="material-symbols-outlined">warning</span>
                   Danger Zone
                 </h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mb-space-md">Sign out from all sessions and clear local data.</p>
-                <button className="px-space-md py-2 rounded-lg bg-error-container text-on-error-container hover:bg-error-container/80 font-title-sm text-title-sm transition-colors flex items-center gap-space-xs">
+                <p className="font-body-sm text-body-sm text-on-surface-variant mb-space-md">
+                  Signs you out on every device and browser where this account is signed in.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSignOutEverywhere}
+                  disabled={signingOut}
+                  className="px-space-md py-2 rounded-lg bg-error-container text-on-error-container hover:bg-error-container/80 font-title-sm text-title-sm transition-colors flex items-center gap-space-xs disabled:opacity-60"
+                >
                   <span className="material-symbols-outlined text-[18px]">logout</span>
-                  <span>Sign Out Everywhere</span>
+                  <span>{signingOut ? 'Signing out…' : 'Sign Out Everywhere'}</span>
                 </button>
+                {signOutError && (
+                  <p className="mt-space-sm font-body-sm text-body-sm text-error">{signOutError}</p>
+                )}
               </section>
             </div>
           </div>

@@ -16,6 +16,8 @@ from src.controllers.events import (
     create_event,
     validate_event_payload,
 )
+from src.controllers.google_auth import GOOGLE_AUTH_MODE
+from src.controllers.users import revoke_all_sessions
 from src.database import get_db
 from src.models.event import EventCreate, EventRead
 
@@ -79,6 +81,19 @@ def dev_login(payload: DevLoginRequest, request: Request) -> CurrentUserRead:
 )
 def get_me(user: Annotated[AuthenticatedUser, Depends(current_actor)]) -> CurrentUserRead:
     return _user_response(user)
+
+
+@router.post("/auth/sign-out-everywhere", summary="Sign out of every device and browser")
+def api_sign_out_everywhere(
+    request: Request,
+    user: Annotated[AuthenticatedUser, Depends(current_actor)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict[str, str]:
+    """Google accounts: every existing session stops working. Demo logins: this session ends."""
+    if user.auth_mode == GOOGLE_AUTH_MODE:
+        revoke_all_sessions(db, user.id)
+    request.session.clear()
+    return {"status": "signed_out_everywhere"}
 
 
 @router.post("/auth/logout", summary="Sign out (used by the React app)")

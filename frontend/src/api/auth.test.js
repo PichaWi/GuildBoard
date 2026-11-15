@@ -75,3 +75,21 @@ describe('auth API', () => {
     }))
   })
 })
+
+
+describe('signOutEverywhere', () => {
+  it('posts to the sign-out-everywhere endpoint', async () => {
+    vi.stubEnv('VITE_USE_MOCK', 'false')
+    const fetchMock = vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ status: 'signed_out_everywhere' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOutEverywhere } = await import('./auth')
+
+    await expect(signOutEverywhere()).resolves.toEqual({ status: 'signed_out_everywhere' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/sign-out-everywhere', expect.objectContaining({ method: 'POST' }))
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
+  })
+})

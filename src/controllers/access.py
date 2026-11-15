@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from src.controllers.auth import AuthenticatedUser, UserRole, get_current_user
 from src.controllers.google_auth import GOOGLE_AUTH_MODE, is_allowed_domain
-from src.controllers.users import get_or_provision_user
+from src.controllers.users import get_or_provision_user, session_was_revoked
 from src.database import get_db
 
 
@@ -99,6 +99,12 @@ def current_actor(
         )
 
     stored = get_or_provision_user(db, email=session_user.id, name=session_user.name)
+    if session_was_revoked(stored, request.session.get("issued_at")):
+        request.session.clear()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This session was signed out everywhere. Please sign in again.",
+        )
     return AuthenticatedUser(
         user_id=session_user.id,
         name=session_user.name,
