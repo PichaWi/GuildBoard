@@ -39,6 +39,10 @@ export function PreferencesProvider({ children }) {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', preferences.darkMode);
   }, [preferences.darkMode]);
+  // Language: tells the browser (and screen readers) which language the page is in.
+  useEffect(() => {
+    document.documentElement.lang = preferences.language;
+  }, [preferences.language]);
   return (
     <PreferencesContext.Provider value={{ preferences, setPreference }}>
       {children}
@@ -46,8 +50,10 @@ export function PreferencesProvider({ children }) {
   );
 }
 
+// Outside <PreferencesProvider> (e.g. a component rendered alone in a test),
+// return the defaults so the component still works.
+const DEFAULT_CONTEXT = { preferences: DEFAULT_PREFERENCES, setPreference: () => {} };
+
 export function usePreferences() {
-  const context = useContext(PreferencesContext);
-  if (!context) throw new Error('usePreferences must be used inside <PreferencesProvider>');
-  return context;
+  return useContext(PreferencesContext) ?? DEFAULT_CONTEXT;
 }
