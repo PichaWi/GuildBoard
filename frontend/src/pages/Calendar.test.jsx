@@ -2,6 +2,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Calendar from './Calendar';
+import { PreferencesProvider } from '../context/PreferencesContext';
 import { getEvents } from '../api/events';
 
 vi.mock('../api/events', () => ({
@@ -32,7 +33,7 @@ describe('Calendar filter button', () => {
   });
 
   it('opens a list of event types from the loaded events', async () => {
-    render(<Calendar />);
+    render(<PreferencesProvider><Calendar /></PreferencesProvider>);
     fireEvent.click(await screen.findByRole('button', { name: /filter/i }));
 
     expect(screen.getByLabelText('Project Milestone')).toBeTruthy();
@@ -40,7 +41,7 @@ describe('Calendar filter button', () => {
   });
 
   it('hides events of a type when it is unticked', async () => {
-    render(<Calendar />);
+    render(<PreferencesProvider><Calendar /></PreferencesProvider>);
     await screen.findAllByText('KE Logic Lab');
 
     fireEvent.click(screen.getByRole('button', { name: /filter/i }));

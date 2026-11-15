@@ -28,6 +28,7 @@ function mapBackendUser(data) {
     name: data.name,
     email: data.email || (String(data.id).includes('@') ? data.id : undefined),
     picture: data.picture || undefined,
+    authMode: data.auth_mode || undefined, // 'google-oauth2' or the dev-login mode
   };
 }
 

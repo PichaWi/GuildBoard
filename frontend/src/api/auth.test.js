@@ -19,7 +19,7 @@ describe('auth API', () => {
     const { getMe } = await import('./auth')
 
     await expect(getMe()).resolves.toEqual({
-      id: 'student@ku.th', name: 'Student One', role: 'student', email: 'student@ku.th',
+      id: 'student@ku.th', name: 'Student One', role: 'student', email: 'student@ku.th', authMode: 'google',
     })
   })
 
@@ -56,7 +56,7 @@ describe('auth API', () => {
     const { getMe } = await import('./auth')
 
     await expect(getMe()).resolves.toEqual({
-      id: 'demo-student', name: 'Demo Student', role: 'student', email: undefined,
+      id: 'demo-student', name: 'Demo Student', role: 'student', email: undefined, authMode: 'dev',
     })
   })
 

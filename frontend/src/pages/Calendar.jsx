@@ -3,6 +3,7 @@ import Layout from '../components/Layout';
 import { monthNames } from '../mock/calendarData';
 import { formatDateKey, getWeekStart } from '../components/calendar/calendarUtils';
 import { downloadFile, generateCSV, generateICS, generatePDF, generateXLSX } from '../components/calendar/exportUtils';
+import { usePreferences } from '../context/PreferencesContext';
 import MonthView from '../components/calendar/MonthView';
 import WeekView from '../components/calendar/WeekView';
 import DayView from '../components/calendar/DayView';
@@ -16,7 +17,8 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const todayDate = now;
   const [activeCourses, setActiveCourses] = useState(new Set(["ISP", "KE", "SCS", "FM"]));
-  const [activeView, setActiveView] = useState('Month');
+  const { preferences } = usePreferences();
+  const [activeView, setActiveView] = useState(preferences.calendarView);
   // For week/day navigation
   const [selectedDate, setSelectedDate] = useState(new Date(now));
   const [events, setEvents] = useState([]);

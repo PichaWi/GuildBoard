@@ -1,9 +1,19 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePreferences } from '../context/PreferencesContext';
 import Layout from '../components/Layout';
 
 export default function Settings() {
   const { user } = useAuth();
+  const { preferences, setPreference } = usePreferences();
+
+  // What the app actually knows about how this user signed in.
+  const signInMethod =
+    user?.authMode === 'google-oauth2'
+      ? 'Google account (@ku.th)'
+      : user?.authMode
+        ? 'Development demo login (not for production)'
+        : 'Demo mode (mock data)';
 
   const breadcrumbs = (
     <nav className="flex items-center gap-space-2xs text-on-surface-variant font-label-md text-label-md">
@@ -57,35 +67,63 @@ export default function Settings() {
 
               {/* Preferences Section */}
               <section className="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/20">
-                <h2 className="font-title-md text-title-md text-on-surface font-semibold mb-space-md flex items-center gap-space-xs">
+                <h2 className="font-title-md text-title-md text-on-surface font-semibold mb-space-xs flex items-center gap-space-xs">
                   <span className="material-symbols-outlined text-primary">tune</span>
                   Preferences
                 </h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mb-space-md">Saved automatically on this device.</p>
                 <div className="space-y-space-md">
-                  <label className="flex items-center justify-between cursor-pointer">
-                    <div className="flex items-center gap-space-sm">
-                      <span className="material-symbols-outlined text-on-surface-variant">notifications</span>
-                      <span className="font-body-md text-body-md text-on-surface">Email Notifications</span>
-                    </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5 rounded text-primary-container focus:ring-primary-container" />
-                  </label>
                   <label className="flex items-center justify-between cursor-pointer">
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-on-surface-variant">dark_mode</span>
                       <span className="font-body-md text-body-md text-on-surface">Dark Mode</span>
                     </div>
-                    <input type="checkbox" className="w-5 h-5 rounded text-primary-container focus:ring-primary-container" />
+                    <input
+                      type="checkbox"
+                      checked={preferences.darkMode}
+                      onChange={(e) => setPreference('darkMode', e.target.checked)}
+                      className="w-5 h-5 rounded text-primary-container focus:ring-primary-container"
+                    />
                   </label>
                   <label className="flex items-center justify-between cursor-pointer">
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-on-surface-variant">language</span>
                       <span className="font-body-md text-body-md text-on-surface">Language</span>
                     </div>
-                    <select className="h-9 px-3 rounded-lg bg-surface-container-lowest text-on-surface text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30">
+                    <select
+                      value={preferences.language}
+                      onChange={(e) => setPreference('language', e.target.value)}
+                      className="h-9 px-3 rounded-lg bg-surface-container-lowest text-on-surface text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container"
+                    >
                       <option value="en">English</option>
                       <option value="th">ไทย (Thai)</option>
                     </select>
                   </label>
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-space-sm">
+                      <span className="material-symbols-outlined text-on-surface-variant">calendar_view_month</span>
+                      <span className="font-body-md text-body-md text-on-surface">Default Calendar View</span>
+                    </div>
+                    <select
+                      value={preferences.calendarView}
+                      onChange={(e) => setPreference('calendarView', e.target.value)}
+                      className="h-9 px-3 rounded-lg bg-surface-container-lowest text-on-surface text-body-md font-body-md focus:outline-none focus:ring-2 focus:ring-primary-container"
+                    >
+                      <option value="Month">Month</option>
+                      <option value="Week">Week</option>
+                      <option value="Day">Day</option>
+                      <option value="Agenda">Agenda</option>
+                    </select>
+                  </label>
+                  <div className="flex items-start gap-space-sm">
+                    <span className="material-symbols-outlined text-on-surface-variant">mail</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="font-body-md text-body-md text-on-surface">Reminder Emails</span>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        Sent to the owner email on a ticket when staff click Reminder, Flag TA or Batch Ping.
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -95,15 +133,25 @@ export default function Settings() {
                   <span className="material-symbols-outlined text-primary">security</span>
                   Security
                 </h2>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md">
+                <div className="flex flex-col gap-space-md">
                   <div className="flex flex-col gap-1">
-                    <span className="font-body-md text-body-md text-on-surface">Two-Factor Authentication</span>
-                    <span className="font-body-sm text-body-sm text-on-surface-variant">Protected by Institutional SSO & Dual-Factor Auth</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Signed in with</span>
+                    <span className="font-body-md text-body-md text-on-surface">{signInMethod}</span>
                   </div>
-                  <span className="inline-flex items-center px-space-sm py-1.5 rounded-full text-label-sm font-label-sm bg-secondary-container text-on-secondary-container font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-secondary mr-1.5" />
-                    Enabled (KU SSO)
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">Two-step verification</span>
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">
+                      Managed by your Google account.{' '}
+                      <a
+                        href="https://myaccount.google.com/security"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        Open Google security settings
+                      </a>
+                    </span>
+                  </div>
                 </div>
               </section>
 
