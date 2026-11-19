@@ -47,6 +47,8 @@ DESIGNED = {
     Action.VIEW_AT_RISK: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
     Action.RECORD_CONSULTATION: {"Student": False, "TA": True, "Lecturer": False, "Admin": False},
     Action.SEARCH_CONSULTATIONS: {"Student": False, "TA": True, "Lecturer": False, "Admin": False},
+    Action.CREATE_MATERIAL: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
+    Action.VIEW_UNPUBLISHED_MATERIALS: {"Student": False, "TA": True, "Lecturer": True, "Admin": True},
 }
 
 
