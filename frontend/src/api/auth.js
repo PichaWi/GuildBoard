@@ -28,6 +28,7 @@ function mapBackendUser(data) {
     name: data.name,
     email: data.email || (String(data.id).includes('@') ? data.id : undefined),
     picture: data.picture || undefined,
+    authMode: data.auth_mode || undefined, // 'google-oauth2' or the dev-login mode
   };
 }
 
@@ -80,4 +81,14 @@ export async function logout() {
     throw new Error(`Logout failed: HTTP ${response.status}`);
   }
   return { ok: true };
+}
+
+
+// Settings > Danger Zone: end every session of this account, on every device.
+export async function signOutEverywhere() {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 50));
+    return { status: 'signed_out_everywhere' };
+  }
+  return api.post('/auth/sign-out-everywhere');
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getMe, devLogin as apiDevLogin, logout as apiLogout } from '../api/auth';
+import { getMe, devLogin as apiDevLogin, logout as apiLogout, signOutEverywhere as apiSignOutEverywhere } from '../api/auth';
 
 const AuthContext = createContext();
 
@@ -78,8 +78,15 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('guildboard_user');
   };
 
+  // Throws if the server refuses, so the user stays signed in and sees the error.
+  const signOutEverywhere = async () => {
+    await apiSignOutEverywhere();
+    setUser(null);
+    localStorage.removeItem('guildboard_user');
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, signOutEverywhere, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

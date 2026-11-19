@@ -17,10 +17,11 @@ def validate_session_secret(secret: str) -> None:
             f"SESSION_SECRET must contain at least {MIN_SESSION_SECRET_LENGTH} characters"
         )
     if any(marker in normalized for marker in INSECURE_SESSION_SECRET_MARKERS):
-        raise RuntimeError("SESSION_SECRET must not use a public placeholder or default value")
+        raise RuntimeError(
+            "SESSION_SECRET must not use a public placeholder or default value")
 
 
-def _env_bool(name: str, default: str = "false") -> bool: # read a boolfrom the env
+def _env_bool(name: str, default: str = "false") -> bool:  # read a boolfrom the env
     return os.getenv(name, default).strip().lower() in {"true", "1", "yes", "on"}
 
 
@@ -47,6 +48,7 @@ class DerivedSettings:
         path = path if path.startswith("/") else f"/{path}"
         base = self.frontend_base_url.strip().rstrip("/")
         return f"{base}{path}" if base else path
+
 
 try:
     from pydantic_settings import BaseSettings
@@ -75,6 +77,12 @@ try:
         demo_student_password: str = os.getenv("DEMO_STUDENT_PASSWORD", "")
         demo_lecturer_email: str = os.getenv("DEMO_LECTURER_EMAIL", "")
         demo_lecturer_password: str = os.getenv("DEMO_LECTURER_PASSWORD", "")
+        # Reminder emails (Gmail SMTP). Leave the username empty to switch email off.
+        smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username: str = os.getenv("SMTP_USERNAME", "")
+        smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+        mail_from: str = os.getenv("MAIL_FROM", "")
 
         class Config:
             env_file = ".env"
@@ -101,6 +109,12 @@ except ImportError:
         demo_student_password: str = os.getenv("DEMO_STUDENT_PASSWORD", "")
         demo_lecturer_email: str = os.getenv("DEMO_LECTURER_EMAIL", "")
         demo_lecturer_password: str = os.getenv("DEMO_LECTURER_PASSWORD", "")
+        # Reminder emails (Gmail SMTP). Leave the username empty to switch email off.
+        smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username: str = os.getenv("SMTP_USERNAME", "")
+        smtp_password: str = os.getenv("SMTP_PASSWORD", "")
+        mail_from: str = os.getenv("MAIL_FROM", "")
 
 
 settings = Settings()

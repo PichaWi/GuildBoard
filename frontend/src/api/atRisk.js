@@ -24,8 +24,12 @@ function mapBackendAtRiskItem(item) {
     taskTitle: item.title,
     course: '', // Not in backend model
     dueDate: dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    dueDateClass: isOverdue ? 'py-space-md px-space-md font-medium text-red-950' : 'py-space-md px-space-md font-medium text-amber-950',
-    rowClass: isOverdue ? 'bg-red-50/80 hover:bg-red-100/70 transition-colors' : 'bg-amber-50/80 hover:bg-amber-100/70 transition-colors',
+    dueDateClass: isOverdue
+      ? 'py-space-md px-space-md font-medium text-red-950 dark:text-red-200'
+      : 'py-space-md px-space-md font-medium text-amber-950 dark:text-amber-200',
+    rowClass: isOverdue
+      ? 'bg-red-50/80 hover:bg-red-100/70 dark:bg-red-950/40 dark:hover:bg-red-900/40 transition-colors'
+      : 'bg-amber-50/80 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 transition-colors',
     avatarClass: isOverdue
       ? 'w-9 h-9 rounded-full bg-red-200 text-red-900 font-title-sm text-title-sm flex items-center justify-center shrink-0'
       : 'w-9 h-9 rounded-full bg-amber-200 text-amber-900 font-title-sm text-title-sm flex items-center justify-center shrink-0',
@@ -33,6 +37,9 @@ function mapBackendAtRiskItem(item) {
     riskDays: isOverdue ? Math.ceil(Math.abs(hoursLeft) / 24) : undefined,
     hoursLeft: !isOverdue ? Math.max(0, hoursLeft) : undefined,
     actions: isOverdue ? ['email', 'flag', 'log'] : ['email-reminder', 'assign-ta', 'log'],
+    lastReminder: item.last_reminder
+      ? { kind: item.last_reminder.kind, sentBy: item.last_reminder.sent_by, at: item.last_reminder.at }
+      : null,
   };
 }
 
@@ -48,4 +55,48 @@ export async function getAtRisk() {
     return data.items.map(mapBackendAtRiskItem);
   }
   return [];
+}
+
+
+
+
+// ── Reminders: saved on the server, emailed to the owner when possible ─────────
+
+export async function sendReminder(ticketId, kind) {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 100));
+    return { kind, email: 'not_configured', sent_by: 'Mock User', at: new Date().toISOString() };
+  }
+  return api.post(`/tickets/${ticketId}/reminders`, { kind });
+}
+
+export async function remindAllAtRisk() {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 100));
+    return { count: mockAtRisk.length, emailed: 0 };
+  }
+  return api.post('/at-risk/remind');
+}
+
+// What the lecturer sees after clicking Reminder / Flag TA.
+export function reminderResultMessage(name, kind, email) {
+  const what = kind === 'flag' ? 'TA flag' : 'Reminder';
+  switch (email) {
+    case 'sent': return `${what} emailed to ${name}`;
+    case 'no_email': return `${what} saved. ${name} has no email on file`;
+    case 'not_configured': return `${what} saved. Email is not set up on the server`;
+    case 'failed': return `${what} saved, but the email could not be sent`;
+    default: return `${what} saved`;
+  }
+}
+
+// "just now", "5 min ago", "3 h ago", "2 days ago"
+export function timeAgo(isoString, now = new Date()) {
+  const minutes = Math.max(0, Math.round((now - new Date(isoString)) / 60000));
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
 }

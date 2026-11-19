@@ -397,3 +397,42 @@ def test_a_student_cannot_read_a_ticket(client, sign_in):
 
 def test_reading_a_ticket_requires_sign_in(client):
     assert client.get("/api/tickets/1").status_code == 401
+
+
+def test_a_ticket_can_store_the_owner_email(client, sign_in):
+    sign_in("TA")
+
+    created = client.post(
+        "/api/tickets", json={**VALID_TICKET, "owner_email": "alex@ku.th"}).json()
+
+    assert created["owner_email"] == "alex@ku.th"
+    assert client.get(
+        f"/api/tickets/{created['id']}").json()["owner_email"] == "alex@ku.th"
+
+
+def test_owner_email_is_optional(client, sign_in):
+    sign_in("TA")
+
+    created = client.post("/api/tickets", json=VALID_TICKET).json()
+
+    assert created["owner_email"] == ""
+
+
+def test_an_invalid_owner_email_is_rejected(client, sign_in):
+    sign_in("TA")
+
+    response = client.post(
+        "/api/tickets", json={**VALID_TICKET, "owner_email": "not-an-email"})
+
+    assert response.status_code == 422
+
+
+def test_owner_email_can_be_added_later(client, sign_in):
+    sign_in("TA")
+    created = client.post("/api/tickets", json=VALID_TICKET).json()
+
+    response = client.patch(
+        f"/api/tickets/{created['id']}", json={"owner_email": "alex@ku.th"})
+
+    assert response.status_code == 200
+    assert response.json()["owner_email"] == "alex@ku.th"

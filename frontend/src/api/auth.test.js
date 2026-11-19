@@ -19,7 +19,7 @@ describe('auth API', () => {
     const { getMe } = await import('./auth')
 
     await expect(getMe()).resolves.toEqual({
-      id: 'student@ku.th', name: 'Student One', role: 'student', email: 'student@ku.th',
+      id: 'student@ku.th', name: 'Student One', role: 'student', email: 'student@ku.th', authMode: 'google',
     })
   })
 
@@ -56,7 +56,7 @@ describe('auth API', () => {
     const { getMe } = await import('./auth')
 
     await expect(getMe()).resolves.toEqual({
-      id: 'demo-student', name: 'Demo Student', role: 'student', email: undefined,
+      id: 'demo-student', name: 'Demo Student', role: 'student', email: undefined, authMode: 'dev',
     })
   })
 
@@ -73,5 +73,23 @@ describe('auth API', () => {
       method: 'POST',
       credentials: 'include',
     }))
+  })
+})
+
+
+describe('signOutEverywhere', () => {
+  it('posts to the sign-out-everywhere endpoint', async () => {
+    vi.stubEnv('VITE_USE_MOCK', 'false')
+    const fetchMock = vi.fn().mockResolvedValue(new Response(
+      JSON.stringify({ status: 'signed_out_everywhere' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ))
+    vi.stubGlobal('fetch', fetchMock)
+    const { signOutEverywhere } = await import('./auth')
+
+    await expect(signOutEverywhere()).resolves.toEqual({ status: 'signed_out_everywhere' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/auth/sign-out-everywhere', expect.objectContaining({ method: 'POST' }))
+    vi.unstubAllEnvs()
+    vi.unstubAllGlobals()
   })
 })

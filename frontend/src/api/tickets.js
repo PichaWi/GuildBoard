@@ -16,6 +16,7 @@ function mapBackendTicket(t) {
     description: t.description || '',
     owner: t.owner,
     ownerRole: t.owner_role,
+    ownerEmail: t.owner_email || '',
     priority: t.priority,
     status: t.status,
     dueDate: t.due_at ? new Date(t.due_at).toLocaleDateString('en-US', {
@@ -42,6 +43,7 @@ function mapFrontendTicketToBackend(ticket) {
     description: ticket.description || '',
     owner: ticket.owner,
     owner_role: ticket.ownerRole || 'Faculty Instructor',
+    owner_email: ticket.ownerEmail || '',
     priority: ticket.priority,
     status: ticket.status,
     due_at: ticket.dueDate ? new Date(ticket.dueDate).toISOString() : new Date().toISOString(),

@@ -3,9 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 import UserAvatar from './UserAvatar';
+import { useT } from '../i18n';
 
 export default function Navbar({ leftContent }) {
   const { user } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -19,10 +21,9 @@ export default function Navbar({ leftContent }) {
   };
 
   const navLinkClass = ({ isActive }) =>
-    `px-3 py-1.5 rounded-lg text-title-sm font-title-sm transition-all ${
-      isActive
-        ? 'bg-primary-container text-on-primary font-semibold shadow-2xs'
-        : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+    `px-3 py-1.5 rounded-lg text-title-sm font-title-sm transition-all ${isActive
+      ? 'bg-primary-container text-on-primary font-semibold shadow-2xs'
+      : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
     }`;
 
   return (
@@ -34,17 +35,17 @@ export default function Navbar({ leftContent }) {
         <nav className="hidden md:flex items-center gap-1.5" aria-label="Global Navigation">
           {['ta', 'lecturer', 'admin'].includes(user?.role?.toLowerCase() || '') && (
             <NavLink to="/dashboard" className={navLinkClass}>
-              Dashboard
+              {t('nav.dashboard')}
             </NavLink>
           )}
           <NavLink to="/materials" className={navLinkClass}>
-            Materials
+            {t('nav.materialsShort')}
           </NavLink>
 
           {/* Role Management - ONLY visible to Admin users */}
           {isAdmin && (
             <NavLink to="/admin/roles" className={navLinkClass}>
-              Role Management
+              {t('nav.roles')}
             </NavLink>
           )}
         </nav>
@@ -59,7 +60,7 @@ export default function Navbar({ leftContent }) {
           </span>
           <input
             type="text"
-            placeholder="Search tasks, materials..."
+            placeholder={t('nav.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-48 lg:w-64 h-9 pl-8 pr-3 text-body-sm font-body-sm rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container focus:ring-1 focus:ring-primary transition-all"
@@ -68,7 +69,7 @@ export default function Navbar({ leftContent }) {
 
         <div className="hidden lg:flex items-center space-x-2 text-label-sm font-label-sm text-primary bg-surface-container px-3 py-1 rounded-full border border-outline-variant/30 shadow-2xs">
           <span className="inline-block w-2 h-2 rounded-full bg-secondary animate-pulse" />
-          <span className="font-semibold">Fall 2026</span>
+          <span className="font-semibold">{t('nav.term')}</span>
         </div>
 
         <div className="hidden sm:block h-6 w-px bg-outline-variant/30 mx-space-2xs" />

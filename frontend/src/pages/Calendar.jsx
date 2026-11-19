@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { monthNames } from '../mock/calendarData';
-import { formatDateKey, getWeekStart, generateICS } from '../components/calendar/calendarUtils';
+import { formatDateKey, getWeekStart } from '../components/calendar/calendarUtils';
+import { downloadFile, generateCSV, generateICS, generatePDF, generateXLSX } from '../components/calendar/exportUtils';
+import { usePreferences } from '../context/PreferencesContext';
 import MonthView from '../components/calendar/MonthView';
 import WeekView from '../components/calendar/WeekView';
 import DayView from '../components/calendar/DayView';
@@ -15,7 +17,8 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const todayDate = now;
   const [activeCourses, setActiveCourses] = useState(new Set(["ISP", "KE", "SCS", "FM"]));
-  const [activeView, setActiveView] = useState('Month');
+  const { preferences } = usePreferences();
+  const [activeView, setActiveView] = useState(preferences.calendarView);
   // For week/day navigation
   const [selectedDate, setSelectedDate] = useState(new Date(now));
   const [events, setEvents] = useState([]);
@@ -23,6 +26,7 @@ export default function Calendar() {
   const [error, setError] = useState(null);
   // Filter dropdown: event types the user has unticked
   const [showFilter, setShowFilter] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const [hiddenTypes, setHiddenTypes] = useState(new Set());
 
   const currentYear = currentDate.getFullYear();
@@ -124,18 +128,21 @@ export default function Calendar() {
   // events that pass both the course checkboxes and the type filter
   const visibleEvents = events.filter((e) => activeCourses.has(e.course) && !hiddenTypes.has(e.type));
 
-  // Export handler
-  const handleExport = () => {
-    const icsContent = generateICS(visibleEvents);
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `guildboard_calendar_${currentYear}_${currentMonth + 1}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Export: the user picks a format from the menu.
+  const EXPORT_FORMATS = [
+    { id: 'ics', label: 'Calendar file (.ics)', hint: 'Google Calendar, Outlook, Apple Calendar' },
+    { id: 'csv', label: 'CSV (.csv)', hint: 'Opens in Excel or Google Sheets' },
+    { id: 'xlsx', label: 'Excel (.xlsx)', hint: 'Formatted spreadsheet with a frozen header' },
+    { id: 'pdf', label: 'PDF (.pdf)', hint: 'Printable table, A4 landscape' },
+  ];
+
+  const handleExport = async (format) => {
+    setShowExport(false);
+    const name = 'guildboard_calendar';
+    if (format === 'ics') downloadFile(generateICS(visibleEvents), `${name}.ics`, 'text/calendar;charset=utf-8');
+    if (format === 'csv') downloadFile(generateCSV(visibleEvents), `${name}.csv`, 'text/csv;charset=utf-8');
+    if (format === 'xlsx') downloadFile(await generateXLSX(visibleEvents), `${name}.xlsx`);
+    if (format === 'pdf') downloadFile(await generatePDF(visibleEvents), `${name}.pdf`);
   };
 
   // Calendar generation logic
@@ -274,11 +281,10 @@ export default function Calendar() {
                   <button
                     key={view}
                     onClick={() => setActiveView(view)}
-                    className={`px-space-sm py-1 font-title-sm text-title-sm rounded-md transition-all cursor-pointer ${
-                      activeView === view
-                        ? 'bg-primary-container text-on-primary shadow-sm'
-                        : 'hover:text-on-surface'
-                    }`}
+                    className={`px-space-sm py-1 font-title-sm text-title-sm rounded-md transition-all cursor-pointer ${activeView === view
+                      ? 'bg-primary-container text-on-primary shadow-sm'
+                      : 'hover:text-on-surface'
+                      }`}
                     type="button"
                   >
                     {view}
@@ -290,11 +296,10 @@ export default function Calendar() {
                 <div className="relative">
                   <button
                     onClick={() => setShowFilter(!showFilter)}
-                    className={`inline-flex items-center gap-space-2xs px-space-sm py-2 font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer ${
-                      hiddenTypes.size > 0
-                        ? 'bg-secondary-container text-on-secondary-container'
-                        : 'bg-surface-container-low hover:bg-surface-container text-on-surface'
-                    }`}
+                    className={`inline-flex items-center gap-space-2xs px-space-sm py-2 font-title-sm text-title-sm rounded-lg transition-colors cursor-pointer ${hiddenTypes.size > 0
+                      ? 'bg-secondary-container text-on-secondary-container'
+                      : 'bg-surface-container-low hover:bg-surface-container text-on-surface'
+                      }`}
                     type="button"
                     aria-expanded={showFilter}
                   >
@@ -335,10 +340,33 @@ export default function Calendar() {
                     </div>
                   )}
                 </div>
-                <button onClick={handleExport} className="inline-flex items-center gap-space-2xs px-space-md py-2 bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm rounded-lg shadow-sm transition-all cursor-pointer" type="button">
-                  <span className="material-symbols-outlined text-[18px]">file_download</span>
-                  <span>Export Calendar</span>
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExport(!showExport)}
+                    className="inline-flex items-center gap-space-2xs px-space-md py-2 bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm rounded-lg shadow-sm transition-all cursor-pointer"
+                    type="button"
+                    aria-expanded={showExport}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">file_download</span>
+                    <span>Export Calendar</span>
+                    <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                  </button>
+                  {showExport && (
+                    <div className="absolute right-0 mt-2 w-72 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/30 z-20 py-1">
+                      {EXPORT_FORMATS.map((f) => (
+                        <button
+                          key={f.id}
+                          onClick={() => handleExport(f.id)}
+                          className="w-full text-left px-space-md py-2 hover:bg-surface-container cursor-pointer"
+                          type="button"
+                        >
+                          <div className="font-title-sm text-title-sm text-on-surface">{f.label}</div>
+                          <div className="font-body-sm text-body-sm text-on-surface-variant">{f.hint}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -60,3 +61,21 @@ def assign_role(db: Session, email: str, role: UserRole) -> tuple[User, bool]:
         user.role = role.value
     db.commit()
     return user, created
+
+
+def revoke_all_sessions(db: Session, email: str) -> None:
+    """Sign Out Everywhere: every session made before now stops working."""
+    user = find_user(db, email)
+    if user is not None:
+        user.sessions_revoked_at = datetime.now(timezone.utc)
+        db.commit()
+
+
+def session_was_revoked(user: User, issued_at: float | None) -> bool:
+    """True if this session started before the user's last Sign Out Everywhere."""
+    if user.sessions_revoked_at is None:
+        return False
+    revoked = user.sessions_revoked_at
+    if revoked.tzinfo is None:  # SQLite returns naive datetimes; they are UTC
+        revoked = revoked.replace(tzinfo=timezone.utc)
+    return (issued_at or 0) < revoked.timestamp()

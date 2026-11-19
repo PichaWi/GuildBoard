@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import logoUrl from '../assets/logo.png';
 import { DEFAULTS } from '../config/appConfig';
 import UserAvatar from './UserAvatar';
+import { useT } from '../i18n';
 
 const ALL_NAV_ITEMS = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard', roles: ['ta', 'lecturer', 'admin'] },
@@ -14,19 +15,20 @@ const ALL_NAV_ITEMS = [
   { to: '/settings', icon: 'settings', label: 'Settings', roles: ['student', 'ta', 'lecturer', 'admin'] },
 ];
 
-function getRoleLabel(role) {
+function getRoleLabel(role, t) {
   const r = String(role || '').toLowerCase();
   switch (r) {
-    case 'lecturer': return 'Faculty Instructor';
-    case 'ta': return 'Teaching Assistant';
-    case 'admin': return 'Administrator';
-    case 'student': return 'Student';
-    default: return 'User';
+    case 'lecturer': return t('role.lecturer');
+    case 'ta': return t('role.ta');
+    case 'admin': return t('role.admin');
+    case 'student': return t('role.student');
+    default: return t('role.user');
   }
 }
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const t = useT();
   const role = user?.role?.toLowerCase();
   const isAdmin = role === 'admin';
   const isFacultyOrStaff = ['ta', 'lecturer', 'admin'].includes(role);
@@ -53,7 +55,7 @@ export default function Sidebar() {
               }
             >
               <span className="material-symbols-outlined text-[20px]">dashboard</span>
-              <span className="font-title-sm text-title-sm">Dashboard</span>
+              <span className="font-title-sm text-title-sm">{t('nav.dashboard')}</span>
             </NavLink>
           )}
 
@@ -67,7 +69,7 @@ export default function Sidebar() {
             }
           >
             <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-            <span className="font-title-sm text-title-sm">Course Calendar</span>
+            <span className="font-title-sm text-title-sm">{t('nav.calendar')}</span>
           </NavLink>
 
           <NavLink
@@ -80,7 +82,7 @@ export default function Sidebar() {
             }
           >
             <span className="material-symbols-outlined text-[20px]">auto_stories</span>
-            <span className="font-title-sm text-title-sm">Course Materials</span>
+            <span className="font-title-sm text-title-sm">{t('nav.materials')}</span>
           </NavLink>
 
           {/* Admin Role Management link in Sidebar */}
@@ -95,7 +97,7 @@ export default function Sidebar() {
               }
             >
               <span className="material-symbols-outlined text-[20px]">manage_accounts</span>
-              <span className="font-title-sm text-title-sm">Role Management</span>
+              <span className="font-title-sm text-title-sm">{t('nav.roles')}</span>
             </NavLink>
           )}
 
@@ -111,7 +113,7 @@ export default function Sidebar() {
               }
             >
               <span className="material-symbols-outlined text-[20px]">add_circle</span>
-              <span className="font-title-sm text-title-sm">Create Event</span>
+              <span className="font-title-sm text-title-sm">{t('nav.createEvent')}</span>
             </NavLink>
           )}
 
@@ -126,7 +128,7 @@ export default function Sidebar() {
               }
             >
               <span className="material-symbols-outlined text-[20px]">support_agent</span>
-              <span className="font-title-sm text-title-sm">Consultations</span>
+              <span className="font-title-sm text-title-sm">{t('nav.consultations')}</span>
             </NavLink>
           )}
 
@@ -140,7 +142,7 @@ export default function Sidebar() {
             }
           >
             <span className="material-symbols-outlined text-[20px]">search</span>
-            <span className="font-title-sm text-title-sm">Search</span>
+            <span className="font-title-sm text-title-sm">{t('nav.search')}</span>
           </NavLink>
 
           <NavLink
@@ -153,7 +155,7 @@ export default function Sidebar() {
             }
           >
             <span className="material-symbols-outlined text-[20px]">settings</span>
-            <span className="font-title-sm text-title-sm">Settings</span>
+            <span className="font-title-sm text-title-sm">{t('nav.settings')}</span>
           </NavLink>
         </nav>
       </div>
@@ -167,15 +169,15 @@ export default function Sidebar() {
             </span>
             <span className="font-body-sm text-body-sm text-on-surface-variant truncate capitalize">
               {role === 'admin'
-                ? 'System Administrator'
+                ? t('role.adminTitle')
                 : role === 'lecturer'
-                  ? 'Faculty Instructor'
+                  ? t('role.lecturer')
                   : role === 'ta'
-                    ? 'Teaching Assistant'
-                    : 'B.S. SKE Student'}
+                    ? t('role.ta')
+                    : t('role.studentTitle')}
             </span>
             <span className="font-label-sm text-label-sm text-on-surface-variant truncate">
-              {getRoleLabel(role)}
+              {getRoleLabel(role, t)}
             </span>
             {user?.email ? (
               <span className="text-[11px] text-on-surface-variant/80 truncate">
@@ -186,8 +188,8 @@ export default function Sidebar() {
           <button
             className="text-on-surface-variant hover:text-on-surface cursor-pointer"
             type="button"
-            title="Sign out"
-            aria-label="Sign out"
+            title={t('nav.signOut')}
+            aria-label={t('nav.signOut')}
             onClick={() => logout()}
           >
             <span className="material-symbols-outlined text-[20px]">logout</span>

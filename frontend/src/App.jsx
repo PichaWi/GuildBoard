@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 import Login from './pages/Login';
 import Calendar from './pages/Calendar';
 import CreateEvent from './pages/CreateEvent';
@@ -155,9 +156,11 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <PreferencesProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </PreferencesProvider>
     </AuthProvider>
   );
 }

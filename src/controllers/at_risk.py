@@ -41,7 +41,18 @@ def to_at_risk_item(ticket: Ticket, now: datetime) -> dict:
 
 
 def at_risk_report(db: Session, now: datetime) -> dict:
-    items = [to_at_risk_item(ticket, now) for ticket in list_at_risk(db, now)]
+    # Imported here to avoid a circular import (reminders uses list_at_risk).
+    from src.controllers.reminders import latest_reminders, reminder_to_dict
+
+    tickets = list_at_risk(db, now)
+    latest = latest_reminders(db, [ticket.id for ticket in tickets])
+    items = []
+    for ticket in tickets:
+        item = to_at_risk_item(ticket, now)
+        reminder = latest.get(ticket.id)
+        item["last_reminder"] = reminder_to_dict(
+            reminder) if reminder else None
+        items.append(item)
     return {
         "count": len(items),
         "overdue": sum(item["risk_type"] == RISK_OVERDUE for item in items),
