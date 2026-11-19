@@ -31,6 +31,9 @@ COPY --chown=appuser:appgroup scripts/ /app/scripts/
 # Set working directory permissions
 RUN chown -R appuser:appgroup /app
 
+# Create uploads directory for course materials
+RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app/uploads
+
 # Switch to non-root user
 USER appuser
 
