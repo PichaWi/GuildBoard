@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from src.controllers.access import Action, ensure_permission
 from src.controllers.auth import AuthenticatedUser, UserRole
+from src.controllers.auth import UserRole
+from src.controllers.google_auth import GOOGLE_AUTH_MODE
 from src.controllers.users import assign_role, RoleAssignmentError, normalize_email, find_user
 from src.models.user import User
 
@@ -66,13 +68,40 @@ def list_users(db: Session, user: AuthenticatedUser, q: str | None = None, role:
     ]
 
 
+def get_staff_users(db: Session, user: AuthenticatedUser) -> list[UserListItem]:
+    """Get all Lecturers and TAs for instructor/assignee dropdowns."""
+    ensure_permission(user, Action.VIEW_USERS)
+
+    stmt = select(User).where(User.role.in_(["Lecturer", "TA"])).order_by(User.name)
+    users = db.scalars(stmt).all()
+    return [
+        UserListItem(
+            id=u.id,
+            email=u.email,
+            name=u.name,
+            role=u.role,
+            created_at=u.created_at.isoformat() if u.created_at else "",
+        )
+        for u in users
+    ]
+
+
 def update_user_role(db: Session, user: AuthenticatedUser, target_id: int, new_role: str) -> User:
     ensure_permission(user, Action.ASSIGN_ROLE)
 
     # Prevent self-demotion from Admin
-    if user.role == UserRole.ADMIN and user.email:
+    if user.role == UserRole.ADMIN:
         target = db.get(User, target_id)
-        if target and target.email == user.email and new_role != "Admin":
+        is_self = False
+        if target:
+            # Same DB user (Google OAuth: user.id is DB id)
+            if user.auth_mode == GOOGLE_AUTH_MODE and user.id.isdigit() and target.id == int(user.id):
+                is_self = True
+            # Same email (covers dev login admin vs DB user with same email)
+            elif user.email and target.email == user.email:
+                is_self = True
+
+        if is_self and new_role != "Admin":
             raise UsersValidationError(
                 ERROR_SELF_DEMOTION,
                 "Admins cannot remove their own Admin role.",

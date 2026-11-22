@@ -1,7 +1,7 @@
 """Admin user management endpoints (US-5)."""
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -11,17 +11,12 @@ from src.controllers.users_api import (
     UsersValidationError,
     list_users,
     update_user_role,
+    get_staff_users,
 )
+from src.controllers.validation import read_json_payload
 from src.database import get_db
 
 router = APIRouter(prefix="/api", tags=["users"])
-
-
-async def read_json_payload(request: Request) -> Any:
-    try:
-        return await request.json()
-    except ValueError:
-        return {}
 
 
 def _invalid(error: UsersValidationError) -> JSONResponse:
@@ -52,6 +47,31 @@ def read_users(
             "created_at": u.created_at,
         }
         for u in users
+    ]
+
+
+@router.get(
+    "/users/staff",
+    summary="Get all Lecturers and TAs for dropdowns (Staff only)",
+    responses={
+        401: {"description": "Not signed in"},
+        403: {"description": "Signed in as Student"},
+    },
+)
+def read_staff_users(
+    user: Annotated[AuthenticatedUser, Depends(require_permission(Action.VIEW_USERS))],
+    db: Annotated[Session, Depends(get_db)],
+):
+    staff = get_staff_users(db, user)
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "name": u.name,
+            "role": u.role,
+            "created_at": u.created_at,
+        }
+        for u in staff
     ]
 
 

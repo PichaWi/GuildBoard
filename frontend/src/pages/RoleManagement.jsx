@@ -8,7 +8,7 @@ export default function RoleManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters & Search
+  // Filters & Search (server-side via API)
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
 
@@ -38,6 +38,9 @@ export default function RoleManagement() {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  // ─── Search & Filtering (handled server-side, no client-side filtering needed) ───────
+  // The backend handles ?q= and ?role= filters, so we don't need additional filtering here
 
   // ─── Update User Role Action (PUT/PATCH /api/users/:id/role) ──────────────
   const updateUserRole = async (userId, newRole) => {
@@ -279,7 +282,7 @@ export default function RoleManagement() {
                     </tr>
                   )}
 
-                  {!isLoading && filteredUsers.length === 0 && (
+                  {!isLoading && users.length === 0 && (
                     <tr>
                       <td colSpan="6" className="py-space-2xl text-center">
                         <div className="flex flex-col items-center justify-center p-space-xl">
@@ -298,7 +301,7 @@ export default function RoleManagement() {
                   )}
 
                   {!isLoading &&
-                    filteredUsers.map((u) => {
+                    users.map((u) => {
                       const id = u.id || u._id;
                       const isUpdating = updatingUserId === id;
                       const initials = (u.name || 'User')
