@@ -273,16 +273,16 @@ def test_file_size_limit_enforced(client):
 
 
 def test_invalid_file_extension_rejected(client):
-    """Non-zip files are rejected (400)."""
+    """Non-allowed file types are rejected (400)."""
     cookies = get_lecturer_cookies(client)
 
-    # Try to upload a .pdf file
-    pdf_content = b"%PDF-1.4 fake pdf content"
+    # Try to upload a .exe file (not in allowed list)
+    exe_content = b"MZ fake exe content"
 
     response = client.post(
         "/api/materials",
-        data={"title": "PDF Upload", "material_key": "pdf-upload", "course_code": "ISP", "is_published": "true"},
-        files={"file": ("test.pdf", pdf_content, "application/pdf")},
+        data={"title": "EXE Upload", "material_key": "exe-upload", "course_code": "ISP", "is_published": "true"},
+        files={"file": ("test.exe", exe_content, "application/x-msdownload")},
         cookies=cookies,
     )
     assert response.status_code == 400
