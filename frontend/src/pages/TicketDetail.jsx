@@ -5,7 +5,7 @@ import Layout from '../components/Layout';
 import { PriorityBadge, StatusBadge } from '../components/Badge';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
-import { getTicket, updateTicket as apiUpdateTicket } from '../api/tickets';
+import { getTicket, updateTicket as apiUpdateTicket, getTicketComments, addTicketComment } from '../api/tickets';
 import { STAFF_OPTIONS, DEFAULTS } from '../config/appConfig';
 
 // Same rule as the backend (src/controllers/at_risk.py):
@@ -52,7 +52,6 @@ export default function TicketDetail() {
   // Comments state
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-  const [isInternalNote, setIsInternalNote] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Close Task Modal
@@ -85,6 +84,21 @@ export default function TicketDetail() {
   useEffect(() => {
     fetchTicketDetail();
   }, [fetchTicketDetail]);
+
+  // ─── Fetch Comments (GET /api/tickets/:id/comments) ─────────────────────────
+  const fetchComments = useCallback(async () => {
+    try {
+      const data = await getTicketComments(id);
+      setComments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn(`GET /api/tickets/${id}/comments failed:`, err.message);
+      setComments([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   // ─── Update Status Action (PATCH /api/tickets/:id) ─────────────────────────
   const updateTicketStatus = async (newStatus) => {
@@ -168,27 +182,7 @@ export default function TicketDetail() {
     try {
       setIsSubmittingComment(true);
 
-      const commentPayload = {
-        text: newComment.trim(),
-        isInternal: isInternalNote,
-        author: user?.name || DEFAULTS.author,
-        authorRole: user?.role === 'ta' ? 'Teaching Assistant' : 'Faculty Instructor',
-      };
-
-      // TODO: Backend Dev - Wire comment thread append:
-      // POST /api/tickets/:id/comments
-      const response = await fetch(`/api/tickets/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(commentPayload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to post comment with status ${response.status}`);
-      }
-
-      const savedComment = await response.json();
+      const savedComment = await addTicketComment(id, newComment.trim());
       setComments((prev) => [...prev, savedComment]);
       setNewComment('');
       setToast({
@@ -432,32 +426,26 @@ export default function TicketDetail() {
                     comments.map((c) => (
                       <div key={c.id} className="flex items-start gap-space-md">
                         <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-title-sm text-title-sm font-bold shrink-0">
-                          {c.author ? c.author.slice(0, 2).toUpperCase() : 'KU'}
+                          {c.author_name ? c.author_name.slice(0, 2).toUpperCase() : 'KU'}
                         </div>
                         <div className="flex-1 bg-surface rounded-xl p-space-md shadow-2xs border border-outline-variant/20">
                           <div className="flex flex-wrap items-center justify-between gap-space-xs mb-1">
                             <div className="flex items-center gap-space-2xs">
                               <span className="font-title-sm text-title-sm text-on-surface font-semibold">
-                                {c.author}
+                                {c.author_name}
                               </span>
-                              {c.authorRole && (
+                              {c.author_role && (
                                 <span className="px-1.5 py-0.2 rounded bg-surface-container text-primary font-label-sm text-label-sm">
-                                  {c.authorRole}
-                                </span>
-                              )}
-                              {c.isInternal && (
-                                <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-label-sm text-label-sm font-semibold flex items-center gap-0.5">
-                                  <span className="material-symbols-outlined text-[12px]">lock</span>
-                                  Internal Note
+                                  {c.author_role}
                                 </span>
                               )}
                             </div>
                             <span className="font-body-sm text-body-sm text-outline">
-                              {c.timestamp || 'Recent'}
+                              {c.created_at ? new Date(c.created_at).toLocaleString() : 'Recent'}
                             </span>
                           </div>
                           <p className="font-body-md text-body-md text-on-surface leading-relaxed">
-                            {c.text}
+                            {c.body}
                           </p>
                         </div>
                       </div>
@@ -477,19 +465,6 @@ export default function TicketDetail() {
                     />
 
                     <div className="flex flex-wrap items-center justify-between gap-space-xs pt-1 border-t border-outline-variant/20">
-                      <label className="flex items-center gap-space-2xs cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={isInternalNote}
-                          onChange={(e) => setIsInternalNote(e.target.checked)}
-                          className="w-3.5 h-3.5 rounded text-primary-container accent-primary-container cursor-pointer"
-                        />
-                        <span className="font-body-sm text-body-sm text-on-surface-variant inline-flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[15px] text-outline">lock</span>
-                          Internal Staff Note
-                        </span>
-                      </label>
-
                       <button
                         type="submit"
                         disabled={isSubmittingComment || !newComment.trim()}

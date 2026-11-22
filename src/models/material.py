@@ -11,7 +11,22 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database import Base
 
-MAX_FILE_BYTES = 25 * 1024 * 1024  # PB-12: 25 MB
+MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# Allowed file types for course materials
+ALLOWED_MIME_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/zip",
+    "application/x-zip-compressed",
+    "text/plain",
+}
+ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".zip", ".txt"}
 
 
 def _utcnow() -> datetime:

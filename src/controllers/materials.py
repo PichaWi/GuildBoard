@@ -8,20 +8,20 @@ from sqlalchemy.orm import Session
 
 from src.controllers.access import Action, ensure_permission
 from src.controllers.auth import AuthenticatedUser
-from src.models.material import CourseMaterial, MaterialCreate, MAX_FILE_BYTES
+from src.controllers.validation import _is_blank
+from src.models.material import (
+    CourseMaterial,
+    MaterialCreate,
+    MAX_FILE_BYTES,
+    ALLOWED_MIME_TYPES,
+    ALLOWED_EXTENSIONS,
+)
 
 
 ERROR_REQUIRED_FIELDS_MISSING = "REQUIRED_FIELDS_MISSING"
 ERROR_INVALID_FIELD_FORMAT = "INVALID_FIELD_FORMAT"
 ERROR_FILE_TOO_LARGE = "FILE_TOO_LARGE"
 ERROR_INVALID_FILE_TYPE = "INVALID_FILE_TYPE"
-
-ALLOWED_MIME_TYPES = {"application/zip", "application/x-zip-compressed"}
-ALLOWED_EXTENSIONS = {".zip"}
-
-
-def _is_blank(value: Any) -> bool:
-    return value is None or (isinstance(value, str) and not value.strip())
 
 
 def _validate_file(file_name: str, file_size: int, content_type: str) -> None:

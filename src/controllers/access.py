@@ -3,12 +3,14 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.controllers.auth import AuthenticatedUser, UserRole, get_current_user
 from src.controllers.google_auth import GOOGLE_AUTH_MODE, is_allowed_domain
 from src.controllers.users import get_or_provision_user, session_was_revoked
 from src.database import get_db
+from src.models.user import User
 
 
 class Action(str, Enum):
@@ -22,6 +24,8 @@ class Action(str, Enum):
     SEARCH_CONSULTATIONS = "search_consultations"
     CREATE_MATERIAL = "create_material"
     VIEW_UNPUBLISHED_MATERIALS = "view_unpublished_materials"
+    VIEW_USERS = "view_users"
+    ASSIGN_ROLE = "assign_role"
 
 
 @dataclass(frozen=True)
@@ -32,6 +36,7 @@ class Rule:
 
 _STAFF = frozenset({UserRole.TA, UserRole.LECTURER, UserRole.ADMIN})
 _TA_ONLY = frozenset({UserRole.TA})
+_ADMIN_ONLY = frozenset({UserRole.ADMIN})
 
 PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.VIEW_DRAFT_EVENTS: Rule(
@@ -74,6 +79,14 @@ PERMISSION_MATRIX: dict[Action, Rule] = {
         roles=_STAFF,
         denied_detail="Only Lecturers, TAs and Admins can view unpublished materials.",
     ),
+    Action.VIEW_USERS: Rule(
+        roles=_ADMIN_ONLY,
+        denied_detail="Only Admins can view the user directory.",
+    ),
+    Action.ASSIGN_ROLE: Rule(
+        roles=_ADMIN_ONLY,
+        denied_detail="Only Admins can assign roles.",
+    ),
 }
 
 
@@ -99,6 +112,8 @@ def current_actor(
 ) -> AuthenticatedUser:
     session_user = get_current_user(request)
     if session_user.auth_mode != GOOGLE_AUTH_MODE:
+        # For dev logins, return the session user directly (no database lookup).
+        # The email is included in the session for self-demotion checks.
         return session_user
 
     if not is_allowed_domain(session_user.id):
@@ -144,3 +159,22 @@ def require_permission(action: Action):
 
     dependency.__name__ = f"require_{action.value}"
     return dependency
+
+
+def get_current_user_db_id(db: Session, user: AuthenticatedUser) -> int | None:
+    """Get current user's database ID from auth session.
+
+    Handles both dev login (email lookup) and Google OAuth (user.id is DB id).
+    Returns None if user not found in database.
+    """
+    if user.auth_mode == GOOGLE_AUTH_MODE:
+        # Google OAuth: user.id is already the DB user ID
+        if user.id.isdigit():
+            return int(user.id)
+        return None
+    # Dev login: look up by email (case-insensitive)
+    if user.email:
+        db_user = db.scalar(select(User).where(User.email.ilike(user.email)))
+        if db_user:
+            return db_user.id
+    return None

@@ -1,42 +1,68 @@
 /**
- * Search service module - full-text search across tasks, events, materials.
+ * Search service module - full-text search across tickets, events, materials.
  * Uses mock data when VITE_USE_MOCK=true, otherwise calls real backend endpoints.
  */
 import { api } from './client';
 import { INITIAL_TICKETS as mockTickets } from '../mock/operationsData.jsx';
 import { calendarEvents as mockEvents } from '../mock/calendarData';
+import { INITIAL_MATERIALS as mockMaterials } from '../mock/materialsData.jsx';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 function mapBackendSearchResult(data) {
+  const results = data.results || [];
   return {
-    tasks: Array.isArray(data.tasks) ? data.tasks.map(t => ({
-      id: t.id,
-      title: t.title,
-      description: t.description || '',
-      course: t.course || '',
-      priority: t.priority,
-      status: t.status,
-      dueDate: t.due_at ? new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
-      owner: t.owner,
-      ownerRole: t.owner_role,
-    })) : [],
-    events: Array.isArray(data.events) ? data.events.map(e => ({
-      id: e.id,
-      title: e.title,
-      course: e.course_code,
-      date: e.event_date,
-      time: `${e.start_time} - ${e.end_time}`,
-      location: e.location,
-      speaker: e.instructor,
-      type: e.event_type,
-    })) : [],
+    tasks: results
+      .filter(r => r.type === 'ticket')
+      .map(t => ({
+        id: t.id,
+        title: t.title,
+        description: '',
+        course: '',
+        priority: t.status === 'Open' ? 'High' : 'Medium',
+        status: t.status,
+        dueDate: t.date ? new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+        owner: t.owner,
+        ownerRole: 'TA',
+      })),
+    events: results
+      .filter(r => r.type === 'event')
+      .map(e => ({
+        id: e.id,
+        title: e.title,
+        course: '',
+        date: e.date,
+        time: '',
+        location: '',
+        speaker: e.owner,
+        type: e.type,
+      })),
+    materials: results
+      .filter(r => r.type === 'material')
+      .map(m => ({
+        id: m.id,
+        title: m.title,
+        course: '',
+        date: m.date,
+      })),
   };
 }
 
-export async function search(query) {
+function mapMockMaterials(materials) {
+  return materials.map(m => ({
+    id: m.id,
+    title: m.title,
+    course: m.course,
+    date: m.created_at || m.publishedDate,
+    description: m.description,
+    fileType: m.fileType,
+    fileSize: m.fileSize,
+  }));
+}
+
+export async function search(query, filters = {}) {
   if (!query?.trim()) {
-    return { tasks: [], events: [] };
+    return { tasks: [], events: [], materials: [] };
   }
 
   if (USE_MOCK) {
@@ -51,12 +77,32 @@ export async function search(query) {
       e.course.toLowerCase().includes(q) ||
       e.instructor.toLowerCase().includes(q)
     );
+    const filteredMaterials = mockMaterials.filter(m =>
+      m.title.toLowerCase().includes(q) ||
+      m.course.toLowerCase().includes(q) ||
+      m.module?.toLowerCase().includes(q) ||
+      m.description?.toLowerCase().includes(q) ||
+      m.category?.toLowerCase().includes(q)
+    );
+    const start = filters.offset || 0;
+    const end = start + (filters.limit || 50);
     return {
-      tasks: filteredTickets,
-      events: filteredEvents,
+      tasks: filteredTickets.slice(start, end),
+      events: filteredEvents.slice(start, end),
+      materials: mapMockMaterials(filteredMaterials.slice(start, end)),
     };
   }
 
-  const data = await api.get(`/search?q=${encodeURIComponent(query)}`);
+  const params = new URLSearchParams();
+  params.append('q', query);
+  if (filters.type) params.append('type', filters.type);
+  if (filters.status) params.append('status', filters.status);
+  if (filters.owner) params.append('owner', filters.owner);
+  if (filters.date_from) params.append('date_from', filters.date_from);
+  if (filters.date_to) params.append('date_to', filters.date_to);
+  if (filters.limit) params.append('limit', String(filters.limit));
+  if (filters.offset) params.append('offset', String(filters.offset));
+
+  const data = await api.get(`/search?${params.toString()}`);
   return mapBackendSearchResult(data);
 }

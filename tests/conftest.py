@@ -26,6 +26,8 @@ from sqlalchemy.pool import StaticPool
 DEMO_ACCOUNTS = {
     "Student": ("student.test@ku.th", "student-test-password"),
     "Lecturer": ("lecturer.test@ku.th", "lecturer-test-password"),
+    "TA": ("ta.test@ku.th", "ta-test-password"),
+    "Admin": ("admin.test@ku.th", "admin-test-password"),
 }
 
 
@@ -59,6 +61,10 @@ def client(session_factory, monkeypatch):
     monkeypatch.setattr(settings, "demo_student_password", DEMO_ACCOUNTS["Student"][1])
     monkeypatch.setattr(settings, "demo_lecturer_email", DEMO_ACCOUNTS["Lecturer"][0])
     monkeypatch.setattr(settings, "demo_lecturer_password", DEMO_ACCOUNTS["Lecturer"][1])
+    monkeypatch.setattr(settings, "demo_ta_email", DEMO_ACCOUNTS["TA"][0])
+    monkeypatch.setattr(settings, "demo_ta_password", DEMO_ACCOUNTS["TA"][1])
+    monkeypatch.setattr(settings, "demo_admin_email", DEMO_ACCOUNTS["Admin"][0])
+    monkeypatch.setattr(settings, "demo_admin_password", DEMO_ACCOUNTS["Admin"][1])
 
     def override_get_db():
         db = session_factory()

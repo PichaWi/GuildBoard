@@ -52,7 +52,7 @@ describe('CourseMaterials failure handling', () => {
     fireEvent.change(document.querySelector('input[type="file"]'), {
       target: { files: [file] },
     });
-    const titleInput = screen.getByPlaceholderText(/ISP_Milestone2/);
+    const titleInput = screen.getByPlaceholderText(/ISP Milestone 2 Microservices Rubric/);
     fireEvent.change(titleInput, {
       target: { value: 'Retry Notes' },
     });
@@ -69,7 +69,7 @@ describe('CourseMaterials failure handling', () => {
     fireEvent.click(screen.getByRole('button', { name: /Publish Material/ }));
 
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText(/ISP_Milestone2/)).toBeNull();
+      expect(screen.queryByPlaceholderText(/ISP Milestone 2 Microservices Rubric/)).toBeNull();
     });
     expect(screen.getByText('Retry Notes')).not.toBeNull();
     expect(screen.getByRole('alert').textContent).toContain(

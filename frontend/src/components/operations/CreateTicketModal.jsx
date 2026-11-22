@@ -1,7 +1,29 @@
-import React from 'react';
-import { STAFF_OPTIONS } from '../../config/appConfig';
+import React, { useState, useEffect } from 'react';
+import { getStaffUsers } from '../../api/users';
+import { DEFAULTS } from '../../config/appConfig';
 
 export default function CreateTicketModal({ isOpen, onClose, onSave }) {
+  const [staffUsers, setStaffUsers] = useState([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
+
+  // Fetch staff users when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    let mounted = true;
+    getStaffUsers()
+      .then(users => {
+        if (mounted) {
+          setStaffUsers(users);
+          setIsLoadingStaff(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load staff users:', err);
+        if (mounted) setIsLoadingStaff(false);
+      });
+    return () => { mounted = false; };
+  }, [isOpen]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -103,12 +125,20 @@ export default function CreateTicketModal({ isOpen, onClose, onSave }) {
                 id="form-task-owner"
                 name="form-task-owner"
                 required
+                disabled={isLoadingStaff}
               >
-                <option value="" disabled>Select assignee</option>
-                {STAFF_OPTIONS.map((staff) => (
-                  <option key={staff.value} value={staff.value}>{staff.label}</option>
+                <option value="" disabled>
+                  {isLoadingStaff ? 'Loading staff...' : 'Select assignee'}
+                </option>
+                {staffUsers.map((staff) => (
+                  <option key={staff.id} value={staff.name}>
+                    {staff.name} ({staff.role})
+                  </option>
                 ))}
               </select>
+              {staffUsers.length === 0 && !isLoadingStaff && (
+                <p className="text-label-sm font-label-sm text-warning">No staff users found. Add Lecturers/TAs in Role Management.</p>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-label-md font-label-md text-on-surface" htmlFor="form-task-due">

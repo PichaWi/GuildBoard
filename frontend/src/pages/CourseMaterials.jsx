@@ -25,10 +25,10 @@ export default function CourseMaterials() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadFormData, setUploadFormData] = useState({
     title: '',
-    course: 'ISP',
-    category: 'Lecture Slides',
-    module: '',
+    material_key: '',
+    course_code: 'ISP',
     description: '',
+    is_published: true,
     file: null,
   });
   const [uploadError, setUploadError] = useState('');
@@ -36,21 +36,32 @@ export default function CourseMaterials() {
   // Toast notification
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
-  // ─── File Validation (ZIP only, max 10MB) ─────────────────────────────────────
+  // ─── File Validation (Multiple file types, max 10MB) ─────────────────────────────────────
   const validateFile = (file) => {
     const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-    const allowedTypes = ['application/zip', 'application/x-zip-compressed'];
-    const allowedExtensions = ['.zip'];
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/zip',
+      'application/x-zip-compressed',
+      'text/plain',
+    ];
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.zip', '.txt'];
 
     // Check extension
     const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
     if (!allowedExtensions.includes(ext)) {
-      return { valid: false, error: `Invalid file type: "${ext}". Only .zip files are allowed.` };
+      return { valid: false, error: `Invalid file type: "${ext}". Allowed: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, ZIP, TXT.` };
     }
 
-    // Check MIME type
-    if (!allowedTypes.includes(file.type) && file.type !== '') {
-      return { valid: false, error: `Invalid file type: "${file.type}". Only ZIP archives are allowed.` };
+    // Check MIME type (lenient: allow empty or octet-stream as some clients don't set it correctly)
+    if (!allowedTypes.includes(file.type) && file.type !== '' && file.type !== 'application/octet-stream') {
+      return { valid: false, error: `Invalid file type: "${file.type}". Allowed: PDF, Word, PowerPoint, Excel, ZIP, TXT.` };
     }
 
     // Check size
@@ -111,13 +122,23 @@ export default function CourseMaterials() {
 
     // Validate file before submitting
     if (!uploadFormData.file) {
-      setUploadError('Please select a ZIP file to upload.');
+      setUploadError('Please select a file to upload.');
       return;
     }
 
     const validation = validateFile(uploadFormData.file);
     if (!validation.valid) {
       setUploadError(validation.error);
+      return;
+    }
+
+    // Validate required fields
+    if (!uploadFormData.title.trim()) {
+      setUploadError('Material title is required.');
+      return;
+    }
+    if (!uploadFormData.material_key.trim()) {
+      setUploadError('Material key is required.');
       return;
     }
 
@@ -138,18 +159,16 @@ export default function CourseMaterials() {
 
         createdMaterial = {
           id: newId,
-          material_key: uploadFormData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 64),
+          material_key: uploadFormData.material_key,
           version: 1,
           title: uploadFormData.title,
           description: uploadFormData.description,
-          course: uploadFormData.course,
-          module: uploadFormData.module,
-          category: uploadFormData.category,
+          course: uploadFormData.course_code,
           file_name: uploadFormData.file.name,
           file_size_bytes: uploadFormData.file.size,
           fileSize: `${fileSizeMB} MB`,
           fileType: fileExt,
-          is_published: true,
+          is_published: uploadFormData.is_published,
           publishedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           downloadCount: 0,
           author: user?.name || 'Current User',
@@ -159,26 +178,26 @@ export default function CourseMaterials() {
           event_id: null,
         };
       } else {
-        // TODO: Backend Dev - Implement multipart/form-data upload or JSON payload to POST /api/materials
-        // Requires authentication header and file storage (S3, GCS, or local disk).
+        // Backend expects: title, material_key, course_code, description, is_published, event_id, file
         const payload = new FormData();
         payload.append('title', uploadFormData.title);
-        payload.append('course', uploadFormData.course);
-        payload.append('category', uploadFormData.category);
-        payload.append('module', uploadFormData.module);
+        payload.append('material_key', uploadFormData.material_key);
+        payload.append('course_code', uploadFormData.course_code);
         payload.append('description', uploadFormData.description);
+        payload.append('is_published', String(uploadFormData.is_published));
         if (uploadFormData.file) {
           payload.append('file', uploadFormData.file);
         }
 
         const response = await fetch('/api/materials', {
           method: 'POST',
-          // TODO: Backend Dev - include Authorization token header if required
+          credentials: 'include',
           body: payload,
         });
 
         if (!response.ok) {
-          throw new Error(`Upload failed with status ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
         }
 
         createdMaterial = await response.json();
@@ -194,10 +213,10 @@ export default function CourseMaterials() {
       setIsUploadOpen(false);
       setUploadFormData({
         title: '',
-        course: 'ISP',
-        category: 'Lecture Slides',
-        module: '',
+        material_key: '',
+        course_code: 'ISP',
         description: '',
+        is_published: true,
         file: null,
       });
     } catch (err) {
@@ -214,13 +233,67 @@ export default function CourseMaterials() {
   };
 
   // ─── Handle Download ───────────────────────────────────────────────────────
-  const handleDownload = (material) => {
-    // TODO: Backend Dev - Wire real file streaming download endpoint e.g. GET /api/materials/:id/download
-    setToast({
-      visible: true,
-      message: `Downloading "${material.title}"...`,
-      type: 'info',
-    });
+  const handleDownload = async (material) => {
+    try {
+      setToast({
+        visible: true,
+        message: `Downloading "${material.title}"...`,
+        type: 'info',
+      });
+
+      if (USE_MOCK) {
+        // In mock mode, we can't actually download a file, so just show success
+        setTimeout(() => {
+          setToast({
+            visible: true,
+            message: `Mock download: "${material.title}" (demo mode)`,
+            type: 'success',
+          });
+        }, 500);
+        return;
+      }
+
+      // Call the real backend download endpoint
+      const response = await fetch(`/api/materials/${material.id}/download`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.statusText}`);
+      }
+
+      // Get the filename from Content-Disposition header or use the material's file_name
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = material.file_name || material.title;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match) filename = match[1];
+      }
+
+      // Stream the file download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setToast({
+        visible: true,
+        message: `"${material.title}" downloaded successfully!`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.warn('Download error:', err.message);
+      setToast({
+        visible: true,
+        message: `Failed to download "${material.title}". Please try again.`,
+        type: 'error',
+      });
+    }
   };
 
   // ─── Filter & Search Logic ────────────────────────────────────────────────
@@ -433,7 +506,7 @@ export default function CourseMaterials() {
                         {uploadFormData.file ? uploadFormData.file.name : 'Select or drag course material bundle'}
                       </p>
                       <p className="font-body-sm text-body-sm text-outline mt-1 text-center">
-                        <strong>ZIP files only</strong> • Max <strong>10 MB</strong>
+                        <strong>PDF, Word, PowerPoint, Excel, ZIP, TXT</strong> • Max <strong>10 MB</strong>
                       </p>
                       {uploadError && (
                         <p className="font-body-sm text-body-sm text-error mt-2 text-center">
@@ -443,7 +516,7 @@ export default function CourseMaterials() {
                       <input
                         type="file"
                         className="hidden"
-                        accept=".zip"
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.txt"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -454,10 +527,13 @@ export default function CourseMaterials() {
                               return;
                             }
                             setUploadError('');
+                            // Generate material_key from filename
+                            const key = file.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/\-[^\-]*$/, '').substring(0, 64);
                             setUploadFormData((prev) => ({
                               ...prev,
                               file,
                               title: prev.title || file.name.replace(/\.[^/.]+$/, ''),
+                              material_key: prev.material_key || key,
                             }));
                           }
                         }}
@@ -476,57 +552,56 @@ export default function CourseMaterials() {
                         required
                         value={uploadFormData.title}
                         onChange={(e) => setUploadFormData((prev) => ({ ...prev, title: e.target.value }))}
-                        placeholder="e.g. ISP_Milestone2_Microservices_Rubric.pdf"
+                        placeholder="e.g. ISP Milestone 2 Microservices Rubric"
                         className="h-10 px-3 rounded-lg bg-surface-container-lowest text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
                       />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+                        Material Key <span className="text-error">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={uploadFormData.material_key || ''}
+                        onChange={(e) => setUploadFormData((prev) => ({ ...prev, material_key: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 64) }))}
+                        placeholder="e.g. isp-milestone2-microservices-rubric (auto-generated from filename)"
+                        className="h-10 px-3 rounded-lg bg-surface-container-lowest text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary shadow-sm font-mono"
+                      />
+                      <p className="font-body-xs text-body-xs text-outline">Lowercase, alphanumeric + hyphens only. Used for versioning same material.</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-space-sm">
                       <div className="flex flex-col gap-1">
                         <label className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                          Course
+                          Course Code
                         </label>
                         <select
-                          value={uploadFormData.course}
-                          onChange={(e) => setUploadFormData((prev) => ({ ...prev, course: e.target.value }))}
+                          value={uploadFormData.course_code || 'ISP'}
+                          onChange={(e) => setUploadFormData((prev) => ({ ...prev, course_code: e.target.value }))}
                           className="h-10 px-3 rounded-lg bg-surface-container-lowest text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer"
                         >
-                          <option value="ISP">01418214 - ISP</option>
-                          <option value="KE">01418331 - KE</option>
-                          <option value="SCS">01418497 - SCS</option>
-                          <option value="FM">01418422 - FM</option>
+                          <option value="ISP">ISP</option>
+                          <option value="KE">KE</option>
+                          <option value="SCS">SCS</option>
+                          <option value="FM">FM</option>
                         </select>
                       </div>
 
                       <div className="flex flex-col gap-1">
                         <label className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                          Module / Week
+                          Published
                         </label>
-                        <input
-                          type="text"
-                          value={uploadFormData.module}
-                          onChange={(e) => setUploadFormData((prev) => ({ ...prev, module: e.target.value }))}
-                          placeholder="e.g. Week 04 Microservices"
-                          className="h-10 px-3 rounded-lg bg-surface-container-lowest text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                        />
+                        <select
+                          value={String(uploadFormData.is_published)}
+                          onChange={(e) => setUploadFormData((prev) => ({ ...prev, is_published: e.target.value === 'true' }))}
+                          className="h-10 px-3 rounded-lg bg-surface-container-lowest text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer"
+                        >
+                          <option value="true">Yes</option>
+                          <option value="false">No (Draft)</option>
+                        </select>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <label className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                        Category
-                      </label>
-                      <select
-                        value={uploadFormData.category}
-                        onChange={(e) => setUploadFormData((prev) => ({ ...prev, category: e.target.value }))}
-                        className="h-10 px-3 rounded-lg bg-surface-container-lowest text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary shadow-sm cursor-pointer"
-                      >
-                        <option value="Lecture Slides">Lecture Slides</option>
-                        <option value="Lab Exercises">Lab Exercises</option>
-                        <option value="Project Rubrics">Project Rubrics</option>
-                        <option value="Past Exam Solutions">Past Exam Solutions</option>
-                        <option value="Source Code / Tooling">Source Code / Tooling</option>
-                      </select>
                     </div>
 
                     <div className="flex flex-col gap-1">

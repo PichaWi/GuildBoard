@@ -1,7 +1,7 @@
 """Ticket endpoints for the Operations Dashboard (US-3). Staff only."""
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -16,18 +16,11 @@ from src.controllers.tickets import (
     validate_ticket_create,
     validate_ticket_update,
 )
+from src.controllers.validation import read_json_payload
 from src.database import get_db
 from src.models.ticket import TicketCreate, TicketRead, TicketUpdate
 
 router = APIRouter(prefix="/api", tags=["tickets"])
-
-
-async def read_json_payload(request: Request) -> Any:
-    # Read only after the permission dependency, so a Student gets 403 even for a bad body.
-    try:
-        return await request.json()
-    except ValueError:
-        return {}
 
 
 def _invalid(error: TicketValidationError) -> JSONResponse:

@@ -16,9 +16,9 @@ from src.controllers.reminders import (
     remind_all_at_risk,
     reminder_to_dict,
 )
+from src.controllers.validation import read_json_payload
 from src.database import get_db
 from src.models.ticket import Ticket
-from src.views.tickets import read_json_payload
 
 router = APIRouter(prefix="/api", tags=["reminders"])
 

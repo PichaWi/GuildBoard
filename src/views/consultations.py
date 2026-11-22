@@ -13,9 +13,9 @@ from src.controllers.consultations import (
     search_consultations,
     validate_consultation,
 )
+from src.controllers.validation import read_json_payload
 from src.database import get_db
 from src.models.consultation import ConsultationCreate, ConsultationRead
-from src.views.tickets import read_json_payload
 
 router = APIRouter(prefix="/api", tags=["consultations"])
 

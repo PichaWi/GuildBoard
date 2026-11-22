@@ -6,6 +6,8 @@ import { PriorityBadge, StatusBadge } from '../components/Badge';
 import { getInitials } from '../components/operations/Badges';
 import { DEFAULTS } from '../config/appConfig';
 
+const DEFAULT_LIMIT = 50;
+
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -13,42 +15,84 @@ export default function SearchResults() {
   const [searchInput, setSearchInput] = useState(query);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'tasks' | 'calendar'
 
-  const [results, setResults] = useState({ tasks: [], events: [] });
+  const [results, setResults] = useState({ tasks: [], events: [], materials: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Pagination state
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Sync internal search input with URL search params
   useEffect(() => {
     setSearchInput(query);
   }, [query]);
 
+  // Reset pagination when query changes
+  useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+  }, [query]);
+
   // ─── Fetch Search Results (GET /api/search?q={query}) ──────────────────────
-  const fetchSearchResults = useCallback(async () => {
+  const fetchSearchResults = useCallback(async (isLoadMore = false) => {
     if (!query.trim()) {
-      setResults({ tasks: [], events: [] });
+      setResults({ tasks: [], events: [], materials: [] });
       setIsLoading(false);
+      setIsLoadingMore(false);
+      setHasMore(false);
       return;
     }
 
     try {
-      setIsLoading(true);
+      if (isLoadMore) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
       setError(null);
-      const data = await search(query);
-      setResults({
-        tasks: Array.isArray(data.tasks) ? data.tasks : [],
-        events: Array.isArray(data.events) ? data.events : [],
-      });
+
+      const data = await search(query, { limit: DEFAULT_LIMIT, offset: isLoadMore ? offset : 0 });
+
+      const newTasks = Array.isArray(data.tasks) ? data.tasks : [];
+      const newEvents = Array.isArray(data.events) ? data.events : [];
+      const newMaterials = Array.isArray(data.materials) ? data.materials : [];
+
+      if (isLoadMore) {
+        setResults(prev => ({
+          tasks: [...prev.tasks, ...newTasks],
+          events: [...prev.events, ...newEvents],
+          materials: [...prev.materials, ...newMaterials],
+        }));
+        setOffset(prev => prev + DEFAULT_LIMIT);
+      } else {
+        setResults({
+          tasks: newTasks,
+          events: newEvents,
+          materials: newMaterials,
+        });
+        setOffset(DEFAULT_LIMIT);
+      }
+
+      // Check if there are more results (if we got a full page)
+      const totalNew = newTasks.length + newEvents.length + newMaterials.length;
+      setHasMore(totalNew >= DEFAULT_LIMIT);
     } catch (err) {
       console.warn('GET /api/search failed:', err.message);
       setError(err.message);
-      setResults({ tasks: [], events: [] });
+      if (!isLoadMore) {
+        setResults({ tasks: [], events: [], materials: [] });
+      }
+      setHasMore(false);
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [query]);
+  }, [query, offset]);
 
   useEffect(() => {
-    fetchSearchResults();
+    fetchSearchResults(false);
   }, [fetchSearchResults]);
 
   const handleSearchSubmit = (e) => {
@@ -60,12 +104,18 @@ export default function SearchResults() {
     }
   };
 
+  const handleLoadMore = () => {
+    fetchSearchResults(true);
+  };
+
   const tasksCount = results.tasks.length;
   const eventsCount = results.events.length;
-  const totalCount = tasksCount + eventsCount;
+  const materialsCount = results.materials.length;
+  const totalCount = tasksCount + eventsCount + materialsCount;
 
   const showTasks = activeTab === 'all' || activeTab === 'tasks';
   const showEvents = activeTab === 'all' || activeTab === 'calendar';
+  const showMaterials = activeTab === 'all' || activeTab === 'materials';
 
   const breadcrumbs = (
     <nav className="flex items-center gap-space-2xs text-on-surface-variant font-label-md text-label-md">
@@ -118,7 +168,7 @@ export default function SearchResults() {
             )}
           </div>
 
-          {/* Tabbed Navigation (All, Tasks, Calendar) */}
+          {/* Tabbed Navigation (All, Tasks, Calendar, Materials) */}
           <div className="flex items-center gap-space-xs border-b border-surface-container mb-space-lg">
             <button
               type="button"
@@ -162,6 +212,21 @@ export default function SearchResults() {
               <span>Calendar Events</span>
               <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant">
                 {eventsCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('materials')}
+              className={`pb-space-sm px-space-md text-title-sm font-title-sm border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'materials'
+                  ? 'border-primary text-primary font-bold'
+                  : 'border-transparent text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              <span>Course Materials</span>
+              <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant">
+                {materialsCount}
               </span>
             </button>
           </div>
@@ -432,7 +497,99 @@ export default function SearchResults() {
                   )}
                 </section>
               )}
+
+              {/* Section 3: Course Materials */}
+              {showMaterials && (
+                <section>
+                  <div className="flex items-center justify-between mb-space-sm">
+                    <div className="flex items-center gap-space-xs">
+                      <span className="material-symbols-outlined text-primary text-[22px]">
+                        menu_book
+                      </span>
+                      <h2 className="font-headline-md text-headline-md text-on-surface font-bold">
+                        Course Materials
+                      </h2>
+                    </div>
+                    <span className="text-label-sm font-label-sm text-outline">
+                      {materialsCount} {materialsCount === 1 ? 'match' : 'matches'}
+                    </span>
+                  </div>
+
+                  {materialsCount === 0 ? (
+                    <div className="p-space-lg rounded-xl bg-surface-container-lowest text-center text-body-sm text-on-surface-variant">
+                      No course materials found for this query.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md">
+                      {results.materials.map((material) => {
+                        const materialDate = material.date ? new Date(material.date) : new Date();
+                        const month = materialDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+                        const day = materialDate.getDate();
+
+                        return (
+                          <div
+                            key={material.id || material._id}
+                            className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30 hover:border-primary/40 transition-all flex items-start gap-space-md group"
+                          >
+                            {/* Date Box */}
+                            <div className="bg-surface-container-low text-primary rounded-xl p-space-xs w-14 text-center shrink-0 border border-outline-variant/20">
+                              <span className="block font-label-sm text-label-sm font-bold text-secondary uppercase">
+                                {month}
+                              </span>
+                              <span className="block font-headline-md text-headline-md font-extrabold text-on-surface">
+                                {day}
+                              </span>
+                            </div>
+
+                            {/* Material Details */}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <div className="flex items-center gap-space-xs mb-1">
+                                <span className="material-symbols-outlined text-primary text-[18px]">description</span>
+                                <span className="text-label-sm font-label-sm text-primary font-semibold">Material</span>
+                              </div>
+                              <h3 className="font-title-sm text-title-sm text-on-surface font-semibold group-hover:text-primary transition-colors truncate">
+                                {material.title}
+                              </h3>
+                              <div className="flex flex-col gap-0.5 text-body-sm font-body-sm text-on-surface-variant mt-1.5">
+                                <div className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[15px] text-outline">calendar_today</span>
+                                  <span>{materialDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Load More Button */}
+              {hasMore && totalCount > 0 && (
+                <div className="text-center mt-space-xl">
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="px-space-xl py-3 rounded-xl bg-primary-container text-on-primary hover:bg-primary font-title-sm text-title-sm transition-all cursor-pointer disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 mx-auto"
+                  >
+                    {isLoadingMore ? (
+                      <span>
+                        <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                        Loading more...
+                      </span>
+                    ) : (
+                      <span>
+                        <span>Load More Results</span>
+                        <span className="material-symbols-outlined text-[20px]">keyboard_arrow_down</span>
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
+
           )}
         </div>
       </div>

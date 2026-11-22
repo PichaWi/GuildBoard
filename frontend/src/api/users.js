@@ -32,7 +32,7 @@ function mapFrontendUserToBackend(user) {
   };
 }
 
-export async function getUsers() {
+export async function getUsers(filters = {}) {
   if (USE_MOCK) {
     await new Promise(r => setTimeout(r, 100));
     // Return users with additional fields for RoleManagement display
@@ -42,7 +42,11 @@ export async function getUsers() {
     }));
   }
 
-  const data = await api.get('/users');
+  const params = new URLSearchParams();
+  if (filters.q) params.append('q', filters.q);
+  if (filters.role) params.append('role', filters.role);
+
+  const data = await api.get(`/users?${params.toString()}`);
   return Array.isArray(data) ? data.map(mapBackendUser) : [];
 }
 
@@ -51,6 +55,14 @@ export async function updateUserRole(userId, newRole) {
     await new Promise(r => setTimeout(r, 200));
     const idx = MOCK_USERS.findIndex(u => u.id === parseInt(userId, 10));
     if (idx === -1) throw new Error(`User ${userId} not found`);
+    // Self-demotion check for mock mode (Admin cannot demote themselves)
+    const currentUser = MOCK_USERS.find(u => u.role === 'Admin');
+    if (currentUser && currentUser.id === parseInt(userId, 10) && newRole !== 'Admin') {
+      const error = new Error('Admins cannot remove their own Admin role.');
+      error.status = 400;
+      error.response = { detail: 'Admins cannot remove their own Admin role.', error: 'SELF_DEMOTION' };
+      throw error;
+    }
     MOCK_USERS[idx] = { ...MOCK_USERS[idx], role: newRole };
     return mapBackendUser(MOCK_USERS[idx]);
   }
@@ -76,6 +88,22 @@ export async function createUser(userData) {
   const payload = mapFrontendUserToBackend(userData);
   const data = await api.post('/users', payload);
   return mapBackendUser(data);
+}
+
+export async function getStaffUsers() {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 100));
+    // Return mock staff users (lecturers and TAs)
+    return MOCK_USERS
+      .filter(u => u.role === 'Lecturer' || u.role === 'TA')
+      .map(u => ({
+        ...mapBackendUser(u),
+        id: u.id,
+      }));
+  }
+
+  const data = await api.get('/users/staff');
+  return Array.isArray(data) ? data.map(mapBackendUser) : [];
 }
 
 export async function deleteUser(userId) {

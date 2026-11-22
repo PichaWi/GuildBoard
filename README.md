@@ -38,13 +38,42 @@ FastAPI serves the backend API (`src/views`, `src/controllers`) and enforces aut
 - Task tracking has moved to Jira; keep `/docs/iteration-reports/` as the exported record of each iteration for grading purposes
 
 ## Video for each Iteration
-- Iteration1: https://youtu.be/xCs2F6Ga67U?si=K0rZJTp5d6w1YDOn
-- Iteration2
-- Iteration3
-- Iteration4
-- Iteration5
+- Iteration1: https://youtu.be/xCs2F6Ga67U
+- Iteration2: https://youtu.be/SsxFP0dZcYo
+- Iteration3: https://youtu.be/gTiKihbGgsQ
+- Iteration4: https://youtu.be/gWzYgNZbsSE
+- Iteration5: https://youtu.be/VPP77DBcm20
 
 ---
+
+## Features & API Endpoints
+
+| Feature | Endpoint | Method | Roles | Description |
+|---|---|---|---|---|
+| **Events** | `/api/events` | GET | All | List events (course filter) |
+| | `/api/events` | POST | Lecturer, TA, Admin | Create event |
+| | `/api/events/{id}` | GET | All | Get event details |
+| **Course Materials** | `/api/materials` | GET | All (published), Staff (unpublished) | List materials with course filter |
+| | `/api/materials` | POST | Lecturer, TA, Admin | Upload material (ZIP, ≤25MB) |
+| | `/api/materials/{id}` | GET | All (published), Staff (unpublished) | Get material metadata |
+| | `/api/materials/{id}/download` | GET | All (published), Staff (unpublished) | Download material file |
+| **Search (US-7)** | `/api/search` | GET | TA, Lecturer, Admin | Unified search across tickets, events, materials with filters (query, type, status, owner, date range) |
+| **User Management (US-5)** | `/api/users` | GET | Admin | List users with search (?q=) and role filter (?role=) |
+| | `/api/users/{id}/role` | PATCH | Admin | Update user role (prevents self-demotion from Admin) |
+| **Tickets (US-3)** | `/api/tickets` | GET | TA, Lecturer, Admin | List tickets with status filter |
+| | `/api/tickets` | POST | TA, Lecturer, Admin | Create ticket |
+| | `/api/tickets/{id}` | PATCH | TA, Lecturer, Admin | Update ticket (status, priority, assignee) |
+| | `/api/tickets/{id}/comments` | GET | TA, Lecturer, Admin | Get ticket comments |
+| | `/api/tickets/{id}/comments` | POST | TA, Lecturer, Admin | Add comment (body required, ≤2000 chars) |
+| **Consultations** | `/api/consultations` | GET | TA, Lecturer, Admin | List consultation sessions |
+| | `/api/consultations` | POST | TA | Create consultation record |
+| **Notifications** | `/api/notifications` | GET | All | List user notifications |
+| **At-Risk Students** | `/api/at-risk` | GET | TA, Lecturer, Admin | Get at-risk student list |
+| **Auth** | `/api/auth/me` | GET | All | Current user profile |
+| | `/api/auth/dev-login` | POST | Dev only | Local dev login (Student/TA/Lecturer/Admin) |
+| | `/api/auth/google` | GET | All | Google OAuth2 login |
+| | `/api/auth/callback` | GET | All | Google OAuth2 callback |
+| | `/api/auth/logout` | POST | All | Logout |
 
 ## Installation
 
@@ -133,7 +162,7 @@ You can toggle between client-side mock datasets and live API integration:
 
 ## Database (PostgreSQL + Alembic)
 
-Tables (users, events, tickets, consultation_sessions, course_materials) are
+Tables (users, events, tickets, consultation_sessions, course_materials, ticket_comments) are
 created by **Alembic** migrations in `migrations/`. ER diagram:
 `Diagrams/Database_ER_Diagram.md`.
 
@@ -151,6 +180,38 @@ created by **Alembic** migrations in `migrations/`. ER diagram:
 
 If `DATABASE_URL` is empty the app uses a local SQLite file (`guildboard.db`) and
 creates tables automatically; tests always use in-memory SQLite.
+
+---
+
+### Demo Data Seeding (scripts/seed_data.py)
+
+Populates the database with realistic demo data for all features:
+
+```bash
+# With Docker Compose running:
+docker compose exec backend python scripts/seed_data.py
+```
+
+**What it seeds (idempotent — safe to run multiple times):**
+
+| Table | Count | Details |
+|-------|-------|---------|
+| `users` | 11 | 4 Lecturers, 3 TAs, 3 Students, 1 Admin — matches `.env.example` demo emails |
+| `events` | 9 | Course events with correct instructor names from seeded lecturers |
+| `course_materials` | 3 | Materials with versioning, linked to events |
+| `tickets` | 5 | Teaching-task tickets assigned to seeded TAs (owner_email links to users) |
+| `consultation_sessions` | 3 | TA-recorded student consultations |
+| `ticket_comments` | 3 | Comments on tickets by seeded staff |
+
+**Demo accounts (from `.env.example`):**
+- Lecturers: `lecturer.demo@ku.th` (Aj. Hutchathai), `lecturer2.demo@ku.th` (Aj. Suwichak), `lecturer3.demo@ku.th` (Aj. Chantana), `lecturer4.demo@ku.th` (Aj. Pajee)
+- TAs: `ta.demo@ku.th` (Alex Chen), `ta2.demo@ku.th` (Prima X), `ta3.demo@ku.th` (Picha W)
+- Students: `student.demo@ku.th` (Sarah Jenkins), `student2.demo@ku.th` (Alexei Kozlov), `student3.demo@ku.th` (John Doe)
+- Admin: `admin.demo@ku.th` (System Admin)
+
+All passwords: `demo_*_password_123` (see `.env.example`).
+
+Run this after any database reset (`docker compose down -v && docker compose up --build`) to repopulate demo data.
 
 ## Testing
 
@@ -179,11 +240,45 @@ pull requests. A repository admin must make **Backend tests** and **Frontend
 tests and build** required checks for `main` if failed checks should block merges.
 The workflow alone does not enforce that setting.
 
-## Event API integration
+## API Integration Summary
 
-The current iteration exposes `POST /api/events` for the Create Event form and
-`GET /api/auth/me` for frontend role checks. Until Google OAuth is connected,
-local QA can use `POST /api/auth/dev-login` with server-configured demo accounts.
+The current iteration exposes the following API groups:
+
+### Events (`/api/events`)
+- `POST /api/events` for the Create Event form
+- `GET /api/events` with optional `?course=` filter
+
+### Course Materials (`/api/materials`)
+- `GET /api/materials` lists materials (course filter via `?course=`)
+- `POST /api/materials` uploads ZIP files (≤25MB) with versioning
+- `GET /api/materials/{id}/download` streams the stored file
+
+### Search (`/api/search`) — US-7
+- `GET /api/search?q=<query>&type=<ticket|event|material>&status=<...>&owner=<...>&date_from=<ISO>&date_to=<ISO>`
+- Returns `{ count, results: [{ id, type, title, owner, status, date, url }] }`
+- Auth required; Students receive 403
+
+### User Management (`/api/users`) — US-5
+- `GET /api/users?q=<search>&role=<role>` — Admin only
+- `PATCH /api/users/{id}/role` with `{ "role": "NewRole" }` — Admin only, prevents self-demotion
+
+### Tickets (`/api/tickets`) — US-3
+- `GET /api/tickets?status=<...>` — TA/Lecturer/Admin
+- `POST /api/tickets` — TA/Lecturer/Admin
+- `PATCH /api/tickets/{id}` — TA/Lecturer/Admin
+- `GET /api/tickets/{id}/comments` — TA/Lecturer/Admin
+- `POST /api/tickets/{id}/comments` — TA/Lecturer/Admin (body required, trimmed, max 2000 chars)
+
+### Consultations (`/api/consultations`)
+- `GET /api/consultations` with course filter
+- `POST /api/consultations` — TA only
+
+### Auth
+- `GET /api/auth/me` — current user profile
+- `POST /api/auth/dev-login` — local dev login with server-configured demo accounts (Student/TA/Lecturer/Admin)
+- `GET /api/auth/google` + `GET /api/auth/callback` — Google OAuth2 (@ku.th domain only)
+
+Until Google OAuth is connected, local QA can use `POST /api/auth/dev-login` with server-configured demo accounts.
 Successful login creates a signed, HttpOnly session cookie; event permissions
 come from that session and never from browser storage or caller-supplied role
 headers. Development login is disabled by default and cannot run in production.
@@ -198,6 +293,10 @@ DEMO_STUDENT_EMAIL=<student-email>
 DEMO_STUDENT_PASSWORD=<student-password>
 DEMO_LECTURER_EMAIL=<lecturer-email>
 DEMO_LECTURER_PASSWORD=<lecturer-password>
+DEMO_TA_EMAIL=<ta-email>
+DEMO_TA_PASSWORD=<ta-password>
+DEMO_ADMIN_EMAIL=<admin-email>
+DEMO_ADMIN_PASSWORD=<admin-password>
 ```
 
 Run the direct Student API authorization check while the server is running:
@@ -214,3 +313,11 @@ Hiding the Create Event navigation item is defense-in-depth, not the
 authorization boundary.
 
 ---
+
+## Known Limitations
+
+- **Seeded materials can't be downloaded.** The demo data adds material records to the database but no actual files. To test downloading, upload a file first on the Course Materials page, then download that one.
+- **No delete or edit for course materials.** A material can be uploaded and downloaded, but there is no delete button in the UI.
+- **Google sign-in needs your own credentials.** Real `@ku.th` login only works after you add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to `.env`. Without them, use the demo accounts from `.env.example`.
+- **Reminder emails need SMTP settings.** If `SMTP_USERNAME` is empty, no email is sent. Reminders are still saved.
+- Resetting Docker with `docker compose down -v` deletes the local database, including uploaded files and roles. Run the seed script again afterwards.
