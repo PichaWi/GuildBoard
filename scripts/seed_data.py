@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import func, select  # noqa: E402
 
 from src.database import SessionLocal, init_db  # noqa: E402
-from src.models import ConsultationSession, CourseMaterial, Event, Ticket, User  # noqa: E402
+from src.models import ConsultationSession, CourseMaterial, Event, Ticket, TicketComment, User  # noqa: E402
 
 # The Student and Lecturer emails match .env.example's DEMO_* accounts.
 USERS = [
@@ -36,7 +36,7 @@ def is_empty(db, model) -> bool:
 
 def seed(db) -> dict[str, int]:
     added = dict.fromkeys(
-        ["users", "events", "materials", "tickets", "consultations"], 0)
+        ["users", "events", "materials", "tickets", "consultations", "comments"], 0)
     now = datetime.now(timezone.utc)
     today = date.today()
 
@@ -98,6 +98,23 @@ def seed(db) -> dict[str, int]:
                 due_at=now + timedelta(hours=hours), created_by="lecturer.demo@ku.th",
             ))
             added["tickets"] += 1
+
+    if is_empty(db, TicketComment):
+        # Get tickets to add comments to
+        tickets = db.scalars(select(Ticket)).all()
+        if tickets:
+            # Get the TA user for comments
+            ta_user = db.scalar(select(User).where(User.email == "ta.demo@ku.th"))
+            lecturer_user = db.scalar(select(User).where(User.email == "lecturer.demo@ku.th"))
+            for i, ticket in enumerate(tickets[:3]):  # Add comments to first 3 tickets
+                author = ta_user if i % 2 == 0 else lecturer_user
+                if author:
+                    db.add(TicketComment(
+                        ticket_id=ticket.id,
+                        author_id=author.id,
+                        body=f"Demo comment {i+1} on ticket '{ticket.title}' by {author.name}.",
+                    ))
+                    added["comments"] += 1
 
     if is_empty(db, ConsultationSession):
         for name, sid, course, topic, days in [

@@ -116,3 +116,32 @@ export async function updateTicket(id, updates) {
   const data = await api.patch(`/tickets/${id}`, updates);
   return mapBackendTicket(data);
 }
+
+// Comments API
+export async function getTicketComments(ticketId) {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 100));
+    return [];
+  }
+
+  const data = await api.get(`/tickets/${ticketId}/comments`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function addTicketComment(ticketId, body) {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 150));
+    return {
+      id: Date.now(),
+      ticket_id: ticketId,
+      author_id: 1,
+      author_name: 'Demo User',
+      author_role: 'TA',
+      body: body.trim(),
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  const data = await api.post(`/tickets/${ticketId}/comments`, { body: body.trim() });
+  return data;
+}

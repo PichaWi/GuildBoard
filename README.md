@@ -46,6 +46,35 @@ FastAPI serves the backend API (`src/views`, `src/controllers`) and enforces aut
 
 ---
 
+## Features & API Endpoints
+
+| Feature | Endpoint | Method | Roles | Description |
+|---|---|---|---|---|
+| **Events** | `/api/events` | GET | All | List events (course filter) |
+| | `/api/events` | POST | Lecturer, TA, Admin | Create event |
+| | `/api/events/{id}` | GET | All | Get event details |
+| **Course Materials** | `/api/materials` | GET | All (published), Staff (unpublished) | List materials with course filter |
+| | `/api/materials` | POST | Lecturer, TA, Admin | Upload material (ZIP, ≤25MB) |
+| | `/api/materials/{id}` | GET | All (published), Staff (unpublished) | Get material metadata |
+| | `/api/materials/{id}/download` | GET | All (published), Staff (unpublished) | Download material file |
+| **Search (US-7)** | `/api/search` | GET | TA, Lecturer, Admin | Unified search across tickets, events, materials with filters (query, type, status, owner, date range) |
+| **User Management (US-5)** | `/api/users` | GET | Admin | List users with search (?q=) and role filter (?role=) |
+| | `/api/users/{id}/role` | PATCH | Admin | Update user role (prevents self-demotion from Admin) |
+| **Tickets (US-3)** | `/api/tickets` | GET | TA, Lecturer, Admin | List tickets with status filter |
+| | `/api/tickets` | POST | TA, Lecturer, Admin | Create ticket |
+| | `/api/tickets/{id}` | PATCH | TA, Lecturer, Admin | Update ticket (status, priority, assignee) |
+| | `/api/tickets/{id}/comments` | GET | TA, Lecturer, Admin | Get ticket comments |
+| | `/api/tickets/{id}/comments` | POST | TA, Lecturer, Admin | Add comment (body required, ≤2000 chars) |
+| **Consultations** | `/api/consultations` | GET | TA, Lecturer, Admin | List consultation sessions |
+| | `/api/consultations` | POST | TA | Create consultation record |
+| **Notifications** | `/api/notifications` | GET | All | List user notifications |
+| **At-Risk Students** | `/api/at-risk` | GET | TA, Lecturer, Admin | Get at-risk student list |
+| **Auth** | `/api/auth/me` | GET | All | Current user profile |
+| | `/api/auth/dev-login` | POST | Dev only | Local dev login (Student/TA/Lecturer/Admin) |
+| | `/api/auth/google` | GET | All | Google OAuth2 login |
+| | `/api/auth/callback` | GET | All | Google OAuth2 callback |
+| | `/api/auth/logout` | POST | All | Logout |
+
 ## Installation
 
 ### Quick Setup (Windows)
@@ -133,7 +162,7 @@ You can toggle between client-side mock datasets and live API integration:
 
 ## Database (PostgreSQL + Alembic)
 
-Tables (users, events, tickets, consultation_sessions, course_materials) are
+Tables (users, events, tickets, consultation_sessions, course_materials, ticket_comments) are
 created by **Alembic** migrations in `migrations/`. ER diagram:
 `Diagrams/Database_ER_Diagram.md`.
 
@@ -179,11 +208,45 @@ pull requests. A repository admin must make **Backend tests** and **Frontend
 tests and build** required checks for `main` if failed checks should block merges.
 The workflow alone does not enforce that setting.
 
-## Event API integration
+## API Integration Summary
 
-The current iteration exposes `POST /api/events` for the Create Event form and
-`GET /api/auth/me` for frontend role checks. Until Google OAuth is connected,
-local QA can use `POST /api/auth/dev-login` with server-configured demo accounts.
+The current iteration exposes the following API groups:
+
+### Events (`/api/events`)
+- `POST /api/events` for the Create Event form
+- `GET /api/events` with optional `?course=` filter
+
+### Course Materials (`/api/materials`)
+- `GET /api/materials` lists materials (course filter via `?course=`)
+- `POST /api/materials` uploads ZIP files (≤25MB) with versioning
+- `GET /api/materials/{id}/download` streams the stored file
+
+### Search (`/api/search`) — US-7
+- `GET /api/search?q=<query>&type=<ticket|event|material>&status=<...>&owner=<...>&date_from=<ISO>&date_to=<ISO>`
+- Returns `{ count, results: [{ id, type, title, owner, status, date, url }] }`
+- Auth required; Students receive 403
+
+### User Management (`/api/users`) — US-5
+- `GET /api/users?q=<search>&role=<role>` — Admin only
+- `PATCH /api/users/{id}/role` with `{ "role": "NewRole" }` — Admin only, prevents self-demotion
+
+### Tickets (`/api/tickets`) — US-3
+- `GET /api/tickets?status=<...>` — TA/Lecturer/Admin
+- `POST /api/tickets` — TA/Lecturer/Admin
+- `PATCH /api/tickets/{id}` — TA/Lecturer/Admin
+- `GET /api/tickets/{id}/comments` — TA/Lecturer/Admin
+- `POST /api/tickets/{id}/comments` — TA/Lecturer/Admin (body required, trimmed, max 2000 chars)
+
+### Consultations (`/api/consultations`)
+- `GET /api/consultations` with course filter
+- `POST /api/consultations` — TA only
+
+### Auth
+- `GET /api/auth/me` — current user profile
+- `POST /api/auth/dev-login` — local dev login with server-configured demo accounts (Student/TA/Lecturer/Admin)
+- `GET /api/auth/google` + `GET /api/auth/callback` — Google OAuth2 (@ku.th domain only)
+
+Until Google OAuth is connected, local QA can use `POST /api/auth/dev-login` with server-configured demo accounts.
 Successful login creates a signed, HttpOnly session cookie; event permissions
 come from that session and never from browser storage or caller-supplied role
 headers. Development login is disabled by default and cannot run in production.
@@ -198,6 +261,10 @@ DEMO_STUDENT_EMAIL=<student-email>
 DEMO_STUDENT_PASSWORD=<student-password>
 DEMO_LECTURER_EMAIL=<lecturer-email>
 DEMO_LECTURER_PASSWORD=<lecturer-password>
+DEMO_TA_EMAIL=<ta-email>
+DEMO_TA_PASSWORD=<ta-password>
+DEMO_ADMIN_EMAIL=<admin-email>
+DEMO_ADMIN_PASSWORD=<admin-password>
 ```
 
 Run the direct Student API authorization check while the server is running:
@@ -214,3 +281,12 @@ Hiding the Create Event navigation item is defense-in-depth, not the
 authorization boundary.
 
 ---
+
+## Known Limitations
+
+- Google OAuth2 is configured but not fully integrated in production; local dev login is the primary auth method for testing
+- Course Materials upload accepts ZIP only (≤25MB); other formats rejected by backend validation
+- Search does not yet support pagination (returns all matching results)
+- Frontend Role Management page uses client-side filtering in addition to server-side API filters
+- Ticket comments are not yet editable/deletable after creation
+- No email notifications for ticket updates or comments

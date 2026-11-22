@@ -22,6 +22,8 @@ class Action(str, Enum):
     SEARCH_CONSULTATIONS = "search_consultations"
     CREATE_MATERIAL = "create_material"
     VIEW_UNPUBLISHED_MATERIALS = "view_unpublished_materials"
+    VIEW_USERS = "view_users"
+    ASSIGN_ROLE = "assign_role"
 
 
 @dataclass(frozen=True)
@@ -32,6 +34,7 @@ class Rule:
 
 _STAFF = frozenset({UserRole.TA, UserRole.LECTURER, UserRole.ADMIN})
 _TA_ONLY = frozenset({UserRole.TA})
+_ADMIN_ONLY = frozenset({UserRole.ADMIN})
 
 PERMISSION_MATRIX: dict[Action, Rule] = {
     Action.VIEW_DRAFT_EVENTS: Rule(
@@ -74,6 +77,14 @@ PERMISSION_MATRIX: dict[Action, Rule] = {
         roles=_STAFF,
         denied_detail="Only Lecturers, TAs and Admins can view unpublished materials.",
     ),
+    Action.VIEW_USERS: Rule(
+        roles=_ADMIN_ONLY,
+        denied_detail="Only Admins can view the user directory.",
+    ),
+    Action.ASSIGN_ROLE: Rule(
+        roles=_ADMIN_ONLY,
+        denied_detail="Only Admins can assign roles.",
+    ),
 }
 
 
@@ -99,6 +110,8 @@ def current_actor(
 ) -> AuthenticatedUser:
     session_user = get_current_user(request)
     if session_user.auth_mode != GOOGLE_AUTH_MODE:
+        # For dev logins, return the session user directly (no database lookup).
+        # The email is included in the session for self-demotion checks.
         return session_user
 
     if not is_allowed_domain(session_user.id):

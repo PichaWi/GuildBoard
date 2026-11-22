@@ -24,7 +24,7 @@ export default function RoleManagement() {
       setIsLoading(true);
       setError(null);
 
-      const data = await getUsers();
+      const data = await getUsers({ q: searchQuery, role: roleFilter });
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.warn('GET /api/users failed:', err.message);
@@ -33,7 +33,7 @@ export default function RoleManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchQuery, roleFilter]);
 
   useEffect(() => {
     fetchUsers();

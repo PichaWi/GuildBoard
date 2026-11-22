@@ -32,7 +32,7 @@ function mapFrontendUserToBackend(user) {
   };
 }
 
-export async function getUsers() {
+export async function getUsers(filters = {}) {
   if (USE_MOCK) {
     await new Promise(r => setTimeout(r, 100));
     // Return users with additional fields for RoleManagement display
@@ -42,7 +42,11 @@ export async function getUsers() {
     }));
   }
 
-  const data = await api.get('/users');
+  const params = new URLSearchParams();
+  if (filters.q) params.append('q', filters.q);
+  if (filters.role) params.append('role', filters.role);
+
+  const data = await api.get(`/users?${params.toString()}`);
   return Array.isArray(data) ? data.map(mapBackendUser) : [];
 }
 

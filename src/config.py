@@ -77,6 +77,10 @@ try:
         demo_student_password: str = os.getenv("DEMO_STUDENT_PASSWORD", "")
         demo_lecturer_email: str = os.getenv("DEMO_LECTURER_EMAIL", "")
         demo_lecturer_password: str = os.getenv("DEMO_LECTURER_PASSWORD", "")
+        demo_ta_email: str = os.getenv("DEMO_TA_EMAIL", "")
+        demo_ta_password: str = os.getenv("DEMO_TA_PASSWORD", "")
+        demo_admin_email: str = os.getenv("DEMO_ADMIN_EMAIL", "")
+        demo_admin_password: str = os.getenv("DEMO_ADMIN_PASSWORD", "")
         # Reminder emails (Gmail SMTP). Leave the username empty to switch email off.
         smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
         smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
@@ -109,6 +113,10 @@ except ImportError:
         demo_student_password: str = os.getenv("DEMO_STUDENT_PASSWORD", "")
         demo_lecturer_email: str = os.getenv("DEMO_LECTURER_EMAIL", "")
         demo_lecturer_password: str = os.getenv("DEMO_LECTURER_PASSWORD", "")
+        demo_ta_email: str = os.getenv("DEMO_TA_EMAIL", "")
+        demo_ta_password: str = os.getenv("DEMO_TA_PASSWORD", "")
+        demo_admin_email: str = os.getenv("DEMO_ADMIN_EMAIL", "")
+        demo_admin_password: str = os.getenv("DEMO_ADMIN_PASSWORD", "")
         # Reminder emails (Gmail SMTP). Leave the username empty to switch email off.
         smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
         smtp_port: int = int(os.getenv("SMTP_PORT", "587"))

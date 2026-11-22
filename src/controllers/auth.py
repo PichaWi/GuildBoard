@@ -15,13 +15,14 @@ class UserRole(str, Enum):
 
 class AuthenticatedUser:
     def __init__(
-        self, user_id: str, name: str, role: UserRole, auth_mode: str, picture: str = ""
+        self, user_id: str, name: str, role: UserRole, auth_mode: str, picture: str = "", email: str = ""
     ) -> None:
         self.id = user_id
         self.name = name
         self.role = role
         self.auth_mode = auth_mode
         self.picture = picture
+        self.email = email
 
     def as_session_data(self) -> dict[str, str]:
         return {
@@ -30,6 +31,7 @@ class AuthenticatedUser:
             "role": self.role.value,
             "auth_mode": self.auth_mode,
             "picture": self.picture,
+            "email": self.email,
         }
 
 
@@ -73,6 +75,7 @@ def authenticate_dev_user(email: str, password: str) -> AuthenticatedUser:
             name="Demo Student",
             role=UserRole.STUDENT,
             auth_mode="signed-dev-session-not-for-production",
+            email=settings.demo_student_email,
         )
     if _credentials_match(
         normalized_email,
@@ -85,6 +88,33 @@ def authenticate_dev_user(email: str, password: str) -> AuthenticatedUser:
             name="Demo Lecturer",
             role=UserRole.LECTURER,
             auth_mode="signed-dev-session-not-for-production",
+            email=settings.demo_lecturer_email,
+        )
+    if _credentials_match(
+        normalized_email,
+        password,
+        settings.demo_ta_email,
+        settings.demo_ta_password,
+    ):
+        return AuthenticatedUser(
+            user_id="demo-ta",
+            name="Demo TA",
+            role=UserRole.TA,
+            auth_mode="signed-dev-session-not-for-production",
+            email=settings.demo_ta_email,
+        )
+    if _credentials_match(
+        normalized_email,
+        password,
+        settings.demo_admin_email,
+        settings.demo_admin_password,
+    ):
+        return AuthenticatedUser(
+            user_id="demo-admin",
+            name="Demo Admin",
+            role=UserRole.ADMIN,
+            auth_mode="signed-dev-session-not-for-production",
+            email=settings.demo_admin_email,
         )
 
     raise HTTPException(
@@ -108,7 +138,9 @@ def get_current_user(request: Request) -> AuthenticatedUser:
         auth_mode = session_user["auth_mode"]
         # Sessions created before the picture was stored have no such key.
         picture = session_user.get("picture", "")
-        if not all(isinstance(value, str) for value in (user_id, name, role, auth_mode, picture)):
+        # Email is optional for backward compatibility with old sessions.
+        email = session_user.get("email", "")
+        if not all(isinstance(value, str) for value in (user_id, name, role, auth_mode, picture, email)):
             raise TypeError("session identity fields must be strings")
         return AuthenticatedUser(
             user_id=user_id,
@@ -116,6 +148,7 @@ def get_current_user(request: Request) -> AuthenticatedUser:
             role=UserRole(role),
             auth_mode=auth_mode,
             picture=picture,
+            email=email,
         )
     except (KeyError, TypeError, ValueError):
         request.session.clear()

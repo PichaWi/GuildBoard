@@ -3,11 +3,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TicketDetail from './TicketDetail';
-import { getTicket, updateTicket } from '../api/tickets';
+import { getTicket, updateTicket, getTicketComments, addTicketComment } from '../api/tickets';
 
 vi.mock('../api/tickets', () => ({
   getTicket: vi.fn(),
   updateTicket: vi.fn(),
+  getTicketComments: vi.fn(),
+  addTicketComment: vi.fn(),
 }));
 
 vi.mock('../context/AuthContext', () => ({
@@ -47,6 +49,7 @@ describe('TicketDetail failure handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getTicket.mockResolvedValue(ticket);
+    getTicketComments.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -120,9 +123,9 @@ describe('TicketDetail failure handling', () => {
       authorRole: 'Faculty Instructor',
       timestamp: 'Just now',
     };
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce({ ok: false, status: 500 })
-      .mockResolvedValueOnce({ ok: true, json: async () => savedComment });
+    addTicketComment
+      .mockRejectedValueOnce(new Error('Service unavailable'))
+      .mockResolvedValueOnce(savedComment);
     renderPage();
 
     await screen.findByRole('heading', { name: ticket.title });

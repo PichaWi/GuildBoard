@@ -5,7 +5,7 @@ import Layout from '../components/Layout';
 import { PriorityBadge, StatusBadge } from '../components/Badge';
 import ConfirmModal from '../components/ConfirmModal';
 import Toast from '../components/Toast';
-import { getTicket, updateTicket as apiUpdateTicket } from '../api/tickets';
+import { getTicket, updateTicket as apiUpdateTicket, getTicketComments, addTicketComment } from '../api/tickets';
 import { STAFF_OPTIONS, DEFAULTS } from '../config/appConfig';
 
 // Same rule as the backend (src/controllers/at_risk.py):
@@ -85,6 +85,21 @@ export default function TicketDetail() {
   useEffect(() => {
     fetchTicketDetail();
   }, [fetchTicketDetail]);
+
+  // ─── Fetch Comments (GET /api/tickets/:id/comments) ─────────────────────────
+  const fetchComments = useCallback(async () => {
+    try {
+      const data = await getTicketComments(id);
+      setComments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn(`GET /api/tickets/${id}/comments failed:`, err.message);
+      setComments([]);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   // ─── Update Status Action (PATCH /api/tickets/:id) ─────────────────────────
   const updateTicketStatus = async (newStatus) => {
@@ -168,27 +183,7 @@ export default function TicketDetail() {
     try {
       setIsSubmittingComment(true);
 
-      const commentPayload = {
-        text: newComment.trim(),
-        isInternal: isInternalNote,
-        author: user?.name || DEFAULTS.author,
-        authorRole: user?.role === 'ta' ? 'Teaching Assistant' : 'Faculty Instructor',
-      };
-
-      // TODO: Backend Dev - Wire comment thread append:
-      // POST /api/tickets/:id/comments
-      const response = await fetch(`/api/tickets/${id}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(commentPayload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to post comment with status ${response.status}`);
-      }
-
-      const savedComment = await response.json();
+      const savedComment = await addTicketComment(id, newComment.trim());
       setComments((prev) => [...prev, savedComment]);
       setNewComment('');
       setToast({
