@@ -41,6 +41,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [helpTopic, setHelpTopic] = useState(null); // null, 'forgot' or 'help'
+  const [showDevLogin, setShowDevLogin] = useState(false);
 
   // click the same link again to close it
   const toggleHelp = (topic) => {
@@ -348,44 +349,62 @@ export default function Login() {
           {/* Dev / Quick Mock Login */}
           {USE_MOCK ? (
             <div className="mt-space-md pt-space-md border-t border-outline-variant/30">
-              <div className="flex items-center justify-between mb-space-xs">
-                <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                  Quick Demo Login
-                </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-medium">
-                  Dev Roles
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {!showDevLogin ? (
                 <button
                   type="button"
-                  onClick={() => handleMockLogin('student')}
-                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                  onClick={() => setShowDevLogin(true)}
+                  className="w-full flex items-center justify-center gap-space-xs px-space-md py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-title-sm text-on-surface transition-all shadow-2xs cursor-pointer"
                 >
-                  Student
+                  <span className="material-symbols-outlined text-[20px] text-primary">admin_panel_settings</span>
+                  <span className="font-semibold">Dev Login</span>
+                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant">expand_more</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleMockLogin('ta')}
-                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-                >
-                  TA
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMockLogin('lecturer')}
-                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-                >
-                  Lecturer
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMockLogin('admin')}
-                  className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
-                >
-                  Admin
-                </button>
-              </div>
+              ) : (
+                <div className="animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between mb-space-xs">
+                    <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+                      Quick Demo Login
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowDevLogin(false)}
+                      className="text-[11px] px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-medium cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleMockLogin('student')}
+                      className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                    >
+                      Student
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMockLogin('ta')}
+                      className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                    >
+                      TA
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMockLogin('lecturer')}
+                      className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                    >
+                      Lecturer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMockLogin('admin')}
+                      className="w-full py-2.5 px-2 rounded-xl bg-surface-container-low border border-outline-variant/40 hover:border-primary/50 hover:bg-surface-container font-title-sm text-label-sm sm:text-title-sm text-on-surface transition-all text-center shadow-2xs cursor-pointer font-medium active:scale-[0.98]"
+                    >
+                      Admin
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <p className="mt-space-md pt-space-md border-t border-outline-variant/30 font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
