@@ -20,14 +20,21 @@ from src.models import ConsultationSession, CourseMaterial, Event, Ticket, Ticke
 
 # The Student and Lecturer emails match .env.example's DEMO_* accounts.
 USERS = [
-    ("lecturer.demo@ku.th", "Aj. Milk", "Lecturer"),
+    ("lecturer.demo@ku.th", "Aj. Hutchathai", "Lecturer"),
+    ("lecturer2.demo@ku.th", "Aj. Suwichak", "Lecturer"),
+    ("lecturer3.demo@ku.th", "Aj. Chantana", "Lecturer"),
+    ("lecturer4.demo@ku.th", "Aj. Pajee", "Lecturer"),
     ("ta.demo@ku.th", "Alex Chen", "TA"),
+    ("ta2.demo@ku.th", "Prima X", "TA"),
+    ("ta3.demo@ku.th", "Picha W", "TA"),
     ("student.demo@ku.th", "Sarah Jenkins", "Student"),
+    ("student2.demo@ku.th", "Alexei Kozlov", "Student"),
+    ("student3.demo@ku.th", "John Doe", "Student"),
     ("admin.demo@ku.th", "System Admin", "Admin"),
 ]
 
 
-OWNER_EMAILS = {"Picha W": "ta.demo@ku.th", "Prima X": "ta2.demo@ku.th"}
+OWNER_EMAILS = {"Picha W": "ta3.demo@ku.th", "Prima X": "ta2.demo@ku.th"}
 
 
 def is_empty(db, model) -> bool:
@@ -40,37 +47,53 @@ def seed(db) -> dict[str, int]:
     now = datetime.now(timezone.utc)
     today = date.today()
 
+    # Upsert users (update name/role if email exists)
     for email, name, role in USERS:
-        if db.scalar(select(User).where(User.email == email)) is None:
+        user = db.scalar(select(User).where(User.email == email))
+        if user is None:
             db.add(User(email=email, name=name, role=role))
             added["users"] += 1
+        else:
+            user.name = name
+            user.role = role
     db.flush()
 
-    if is_empty(db, Event):
-        for title, course, kind, days, published in [
-            ("Software Communication Skills", "SCS", "Lecture & Workshop", 2, True),
-            ("KE: Ontology & Model Milestone", "KE", "Project Milestone", 4, True),
-            ("ISP Milestone 2: Architecture Review",
-             "ISP", "Project Milestone", 7, True),
-            ("ISP Iteration 5 Planning (draft)", "ISP", "Lab Session", 10, False),
-        ]:
+    # Seed events (idempotent: check by title)
+    event_data = [
+        ("Software Communication Skills", "SCS", "Lecture & Workshop", 2, True, "Aj. Chantana"),
+        ("KE: Ontology & Model Milestone", "KE", "Project Milestone", 4, True, "Aj. Hutchathai"),
+        ("ISP Milestone 2: Architecture Review",
+         "ISP", "Project Milestone", 7, True, "Aj. Suwichak"),
+        ("ISP Iteration 5 Planning (draft)", "ISP", "Lab Session", 10, False, "Aj. Suwichak"),
+        ("Folk Music Quiz", "FM", "Lecture", 15, True, "Aj. Pajee"),
+        ("ISP Lab & Process Check", "ISP", "Assignment Due", 20, True, "Aj. Suwichak"),
+        ("KE Ontology Design Submission", "KE", "Assignment Due", 25, True, "Aj. Hutchathai"),
+        ("FM Lecture", "FM", "Final Exam", 30, True, "Aj. Pajee"),
+        ("ISP Code Quality Submission", "ISP", "Assignment Due", 1, True, "Aj. Suwichak"),
+    ]
+    for title, course, kind, days, published, instructor in event_data:
+        existing = db.scalar(select(Event).where(Event.title == title))
+        if existing is None:
             db.add(Event(
                 title=title, course_code=course, event_type=kind,
                 event_date=today + timedelta(days=days), start_time=time(9), end_time=time(12),
-                location="Room 203", instructor="Aj. Milk", description="",
+                location="Room 203", instructor=instructor, description="",
                 publish_immediately=published, created_by_role="Lecturer",
             ))
             added["events"] += 1
-        db.flush()
+    db.flush()
 
-    if is_empty(db, CourseMaterial):
-        first_event = db.scalar(select(Event).order_by(Event.id))
-        for key, version, title, published in [
-            ("isp-architecture-guide", 1, "ISP Architecture Guidelines", False),
-            # latest published
-            ("isp-architecture-guide", 2, "ISP Architecture Guidelines", True),
-            ("ke-ontology-slides", 1, "KE Ontology Lecture Slides", True),
-        ]:
+    # Seed materials (idempotent: check by material_key + version)
+    first_event = db.scalar(select(Event).order_by(Event.id))
+    for key, version, title, published in [
+        ("isp-architecture-guide", 1, "ISP Architecture Guidelines", False),
+        # latest published
+        ("isp-architecture-guide", 2, "ISP Architecture Guidelines", True),
+        ("ke-ontology-slides", 1, "KE Ontology Lecture Slides", True),
+    ]:
+        existing = db.scalar(select(CourseMaterial).where(
+            CourseMaterial.material_key == key, CourseMaterial.version == version))
+        if existing is None:
             db.add(CourseMaterial(
                 material_key=key, version=version, title=title, course_code=title.split()[
                     0],
@@ -79,54 +102,67 @@ def seed(db) -> dict[str, int]:
             ))
             added["materials"] += 1
 
-    if is_empty(db, Ticket):
-        for title, owner, priority, status, hours in [
-            ("ISP Milestone 2 Code Review", "Picha W", "High",
-             "In-Progress", 20),        # at risk: due < 48 h
-            ("KE Ontology Schema Check", "Prima X",
-             "Medium", "Open", 24 * 5),          # normal
-            ("SCS Lab Presentation Rubric", "Picha W", "Low",
-             "Closed", -24 * 3),         # closed: never at risk
-            ("FM Essay Feedback Sync", "Prima X", "High",
-             "Open", -30),                 # at risk: overdue
-            ("Architecture Consultation Prep",
-             "Picha W", "Medium", "In-Progress", 24 * 4),
-        ]:
+    # Seed tickets (idempotent: check by title)
+    for title, owner, priority, status, hours in [
+        ("ISP Milestone 2 Code Review", "Picha W", "High",
+         "In-Progress", 20),        # at risk: due < 48 h
+        ("KE Ontology Schema Check", "Prima X",
+         "Medium", "Open", 24 * 5),          # normal
+        ("SCS Lab Presentation Rubric", "Picha W", "Low",
+         "Closed", -24 * 3),         # closed: never at risk
+        ("FM Essay Feedback Sync", "Prima X", "High",
+         "Open", -30),                 # at risk: overdue
+        ("Architecture Consultation Prep",
+         "Picha W", "Medium", "In-Progress", 24 * 4),
+    ]:
+        existing = db.scalar(select(Ticket).where(Ticket.title == title))
+        if existing is None:
             db.add(Ticket(
                 title=title, owner=owner, owner_role="TA", owner_email=OWNER_EMAILS.get(owner, ""),
                 priority=priority, status=status,
                 due_at=now + timedelta(hours=hours), created_by="lecturer.demo@ku.th",
             ))
             added["tickets"] += 1
+    db.flush()
 
-    if is_empty(db, TicketComment):
-        # Get tickets to add comments to
-        tickets = db.scalars(select(Ticket)).all()
-        if tickets:
-            # Get the TA user for comments
-            ta_user = db.scalar(select(User).where(User.email == "ta.demo@ku.th"))
-            lecturer_user = db.scalar(select(User).where(User.email == "lecturer.demo@ku.th"))
-            for i, ticket in enumerate(tickets[:3]):  # Add comments to first 3 tickets
-                author = ta_user if i % 2 == 0 else lecturer_user
-                if author:
+    # Seed comments (idempotent: check by ticket_id + body prefix)
+    tickets = db.scalars(select(Ticket)).all()
+    if tickets:
+        ta_user = db.scalar(select(User).where(User.email == "ta.demo@ku.th"))
+        lecturer_user = db.scalar(select(User).where(User.email == "lecturer.demo@ku.th"))
+        for i, ticket in enumerate(tickets[:3]):
+            body = f"Demo comment {i+1} on ticket '{ticket.title}' by "
+            author = ta_user if i % 2 == 0 else lecturer_user
+            if author:
+                existing = db.scalar(select(TicketComment).where(
+                    TicketComment.ticket_id == ticket.id,
+                    TicketComment.body.like(f"{body}%")
+                ))
+                if existing is None:
                     db.add(TicketComment(
                         ticket_id=ticket.id,
                         author_id=author.id,
-                        body=f"Demo comment {i+1} on ticket '{ticket.title}' by {author.name}.",
+                        body=f"{body}{author.name}.",
                     ))
                     added["comments"] += 1
 
-    if is_empty(db, ConsultationSession):
-        for name, sid, course, topic, days in [
-            ("Sarah Jenkins", "64010892", "ISP",
-             "MVC layering for the architecture submission", -2),
-            ("Alexei Kozlov", "64010915", "KE",
-             "OWL restrictions and competency questions", -1),
-            ("Sarah Jenkins", "64010892", "ISP", "Sequence diagram error path", 0),
-        ]:
+    # Seed consultations (idempotent: check by student_id + topic)
+    for name, sid, course, topic, days in [
+        ("Sarah Jenkins", "64010892", "ISP",
+         "MVC layering for the architecture submission", -2),
+        ("Alexei Kozlov", "64010915", "KE",
+         "OWL restrictions and competency questions", -1),
+        ("Sarah Jenkins", "64010892", "ISP", "Sequence diagram error path", 0),
+    ]:
+        session_at = now + timedelta(days=days)
+        existing = db.scalar(select(ConsultationSession).where(
+            ConsultationSession.student_id == sid,
+            ConsultationSession.topic == topic,
+        ))
+        if existing is None:
             db.add(ConsultationSession(
                 student_name=name, student_id=sid, course_code=course, topic=topic,
-                session_at=now + timedelta(days=days), notes="Demo record from seed_data.py",
+                session_at=session_at, notes="Demo record from seed_data.py",
                 recorded_by="ta.demo@ku.th",
             ))
             added["consultations"] += 1
