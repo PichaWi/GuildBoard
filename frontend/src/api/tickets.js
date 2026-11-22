@@ -121,7 +121,27 @@ export async function updateTicket(id, updates) {
 export async function getTicketComments(ticketId) {
   if (USE_MOCK) {
     await new Promise(r => setTimeout(r, 100));
-    return [];
+    // Return mock comments for development
+    return [
+      {
+        id: 1,
+        ticket_id: ticketId,
+        author_id: 1,
+        author_name: 'Demo TA',
+        author_role: 'TA',
+        body: 'This is a mock comment for development.',
+        created_at: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        id: 2,
+        ticket_id: ticketId,
+        author_id: 2,
+        author_name: 'Demo Lecturer',
+        author_role: 'Lecturer',
+        body: 'Another mock comment with some feedback.',
+        created_at: new Date().toISOString(),
+      },
+    ];
   }
 
   const data = await api.get(`/tickets/${ticketId}/comments`);
@@ -144,4 +164,32 @@ export async function addTicketComment(ticketId, body) {
 
   const data = await api.post(`/tickets/${ticketId}/comments`, { body: body.trim() });
   return data;
+}
+
+export async function updateTicketComment(ticketId, commentId, body) {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 150));
+    return {
+      id: commentId,
+      ticket_id: ticketId,
+      author_id: 1,
+      author_name: 'Demo User',
+      author_role: 'TA',
+      body: body.trim(),
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  const data = await api.patch(`/tickets/${ticketId}/comments/${commentId}`, { body: body.trim() });
+  return data;
+}
+
+export async function deleteTicketComment(ticketId, commentId) {
+  if (USE_MOCK) {
+    await new Promise(r => setTimeout(r, 150));
+    return true;
+  }
+
+  await api.delete(`/tickets/${ticketId}/comments/${commentId}`);
+  return true;
 }

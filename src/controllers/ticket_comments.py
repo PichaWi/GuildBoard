@@ -6,33 +6,25 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.controllers.access import Action, ensure_permission
-from src.controllers.auth import AuthenticatedUser
+from src.controllers.access import Action, ensure_permission, get_current_user_db_id
+from src.controllers.auth import AuthenticatedUser, UserRole
+from src.controllers.validation import (
+    APIValidationError,
+    _clean,
+    validate_model,
+)
 from src.models.ticket import Ticket
-from src.models.ticket_comment import TicketComment, TicketCommentCreate
-from src.models.user import User
+from src.models.ticket_comment import TicketComment, TicketCommentCreate, TicketCommentUpdate
 
 
 ERROR_REQUIRED_FIELDS_MISSING = "REQUIRED_FIELDS_MISSING"
 ERROR_INVALID_FIELD_FORMAT = "INVALID_FIELD_FORMAT"
 ERROR_COMMENT_TOO_LONG = "COMMENT_TOO_LONG"
+ERROR_COMMENT_NOT_FOUND = "COMMENT_NOT_FOUND"
 
 
-class TicketCommentValidationError(Exception):
-    def __init__(self, error: str, detail: str, status_code: int, **extra: Any) -> None:
-        super().__init__(detail)
-        self.error = error
-        self.detail = detail
-        self.status_code = status_code
-        self.extra = extra
-
-    def to_response(self) -> dict[str, Any]:
-        return {"detail": self.detail, "error": self.error, **self.extra}
-
-
-def _clean(raw: Any) -> dict[str, Any]:
-    data = raw if isinstance(raw, dict) else {}
-    return {key: value.strip() if isinstance(value, str) else value for key, value in data.items()}
+class TicketCommentValidationError(APIValidationError):
+    pass
 
 
 def validate_comment_create(raw: Any) -> TicketCommentCreate:
@@ -51,17 +43,26 @@ def validate_comment_create(raw: Any) -> TicketCommentCreate:
             "Comment body must be 2000 characters or less.",
             status.HTTP_400_BAD_REQUEST,
         )
-    try:
-        return TicketCommentCreate.model_validate(cleaned)
-    except ValidationError as exc:
-        problems = "; ".join(
-            f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()
-        )
+    return validate_model(TicketCommentCreate, cleaned, ERROR_INVALID_FIELD_FORMAT)
+
+
+def validate_comment_update(raw: Any) -> TicketCommentUpdate:
+    cleaned = _clean(raw)
+    if not cleaned.get("body"):
         raise TicketCommentValidationError(
-            ERROR_INVALID_FIELD_FORMAT,
-            f"Invalid comment field(s): {problems}.",
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-        ) from None
+            ERROR_REQUIRED_FIELDS_MISSING,
+            "Missing required field(s): body.",
+            status.HTTP_400_BAD_REQUEST,
+            missing_fields=["body"],
+        )
+    body = cleaned.get("body", "")
+    if len(body) > 2000:
+        raise TicketCommentValidationError(
+            ERROR_COMMENT_TOO_LONG,
+            "Comment body must be 2000 characters or less.",
+            status.HTTP_400_BAD_REQUEST,
+        )
+    return validate_model(TicketCommentUpdate, cleaned, ERROR_INVALID_FIELD_FORMAT)
 
 
 def list_comments(db: Session, ticket_id: int) -> list[TicketComment]:
@@ -84,25 +85,9 @@ def create_comment(db: Session, ticket_id: int, payload: TicketCommentCreate, us
             status.HTTP_404_NOT_FOUND,
         )
 
-    # Get author info from user - for dev logins, look up by email (case-insensitive)
-    if user.id.isdigit():
-        author = db.get(User, user.id)
-    elif user.email:
-        author = db.scalar(select(User).where(User.email.ilike(user.email)))
-    else:
-        author = None
-
-    author_name = author.name if author else user.name
-    author_role = author.role if author else user.role.value
-    author_id = author.id if author else 0  # 0 for dev login users without DB match
-
-    # Debug: if author not found, raise error with details
-    if author_id == 0:
-        raise TicketCommentValidationError(
-            "AUTHOR_NOT_FOUND",
-            f"Author not found in database for user {user.id} (email: {user.email})",
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    author_id = get_current_user_db_id(db, user)
+    author_name = user.name
+    author_role = user.role.value
 
     comment = TicketComment(
         ticket_id=ticket_id,
@@ -117,3 +102,71 @@ def create_comment(db: Session, ticket_id: int, payload: TicketCommentCreate, us
     comment.author_name = author_name
     comment.author_role = author_role
     return comment
+
+
+def update_comment(db: Session, ticket_id: int, comment_id: int, payload: TicketCommentUpdate, user: AuthenticatedUser) -> TicketComment:
+    ensure_permission(user, Action.UPDATE_TICKET)
+
+    # Verify ticket exists
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is None:
+        raise TicketCommentValidationError(
+            "TICKET_NOT_FOUND",
+            f"Ticket {ticket_id} not found.",
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    comment = db.get(TicketComment, comment_id)
+    if comment is None or comment.ticket_id != ticket_id:
+        raise TicketCommentValidationError(
+            ERROR_COMMENT_NOT_FOUND,
+            f"Comment {comment_id} not found on ticket {ticket_id}.",
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    # Only author can edit their own comment (Admins can edit any)
+    current_user_db_id = get_current_user_db_id(db, user)
+    if current_user_db_id is None or (comment.author_id != current_user_db_id and user.role != UserRole.ADMIN):
+        raise TicketCommentValidationError(
+            "FORBIDDEN",
+            "You can only edit your own comments.",
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    comment.body = payload.body
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+
+def delete_comment(db: Session, ticket_id: int, comment_id: int, user: AuthenticatedUser) -> None:
+    ensure_permission(user, Action.UPDATE_TICKET)
+
+    # Verify ticket exists
+    ticket = db.get(Ticket, ticket_id)
+    if ticket is None:
+        raise TicketCommentValidationError(
+            "TICKET_NOT_FOUND",
+            f"Ticket {ticket_id} not found.",
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    comment = db.get(TicketComment, comment_id)
+    if comment is None or comment.ticket_id != ticket_id:
+        raise TicketCommentValidationError(
+            ERROR_COMMENT_NOT_FOUND,
+            f"Comment {comment_id} not found on ticket {ticket_id}.",
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    # Only author can delete their own comment (Admins can delete any)
+    current_user_db_id = get_current_user_db_id(db, user)
+    if current_user_db_id is None or (comment.author_id != current_user_db_id and user.role != UserRole.ADMIN):
+        raise TicketCommentValidationError(
+            "FORBIDDEN",
+            "You can only delete your own comments.",
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    db.delete(comment)
+    db.commit()
