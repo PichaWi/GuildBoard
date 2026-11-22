@@ -17,7 +17,7 @@ from src.database import Base
 from src.models import ConsultationCreate, CourseMaterial
 
 ROOT = Path(__file__).resolve().parent.parent
-TABLES = {"users", "events", "tickets", "consultation_sessions", "course_materials"}
+TABLES = {"users", "events", "tickets", "consultation_sessions", "course_materials", "ticket_comments"}
 
 
 def test_every_table_is_registered():
@@ -69,8 +69,8 @@ def test_seed_runs_twice_without_duplicates_and_flags_at_risk(tmp_path):
 
     first, second = run(), run()
     assert first.returncode == 0, first.stderr
-    assert "added 4 users, 4 events, 3 materials, 5 tickets, 3 consultations" in first.stdout
-    assert "added 0 users, 0 events, 0 materials, 0 tickets, 0 consultations" in second.stdout
+    assert "added 11 users, 9 events, 3 materials, 5 tickets, 3 consultations, 3 comments" in first.stdout
+    assert "added 0 users, 0 events, 0 materials, 0 tickets, 0 consultations, 0 comments" in second.stdout
 
     # The seeded tickets include one overdue and one due within 48 h (US-4 demo data).
     check = subprocess.run([sys.executable, "-c", (
