@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { INITIAL_FORM_DATA } from '../mock/createEventData';
 import { createEvent } from '../api/events';
+import { getStaffUsers } from '../api/users';
 import { PriorityBadge } from '../components/Badge';
 import Toast from '../components/Toast';
-import { LECTURER_OPTIONS, DEFAULTS } from '../config/appConfig';
+import { DEFAULTS } from '../config/appConfig';
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -14,9 +15,28 @@ export default function CreateEvent() {
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [createdEvent, setCreatedEvent] = useState(null);
+  const [staffUsers, setStaffUsers] = useState([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(true);
 
   // Toast state
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  // Fetch staff users (Lecturers & TAs) for instructor dropdown
+  useEffect(() => {
+    let mounted = true;
+    getStaffUsers()
+      .then(users => {
+        if (mounted) {
+          setStaffUsers(users);
+          setIsLoadingStaff(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load staff users:', err);
+        if (mounted) setIsLoadingStaff(false);
+      });
+    return () => { mounted = false; };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -284,14 +304,22 @@ export default function CreateEvent() {
                       value={formData.instructor}
                       onChange={handleChange}
                       className="w-full h-11 px-space-md pr-space-xl appearance-none rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary-container border border-outline-variant/30 cursor-pointer transition-all"
+                      disabled={isLoadingStaff}
                     >
-                      <option value="" disabled>Select instructor</option>
-                      {LECTURER_OPTIONS.map((lec) => (
-                        <option key={lec.value} value={lec.value}>{lec.label}</option>
+                      <option value="" disabled>
+                        {isLoadingStaff ? 'Loading staff...' : 'Select instructor'}
+                      </option>
+                      {staffUsers.map((staff) => (
+                        <option key={staff.id} value={staff.name}>
+                          {staff.name} ({staff.role})
+                        </option>
                       ))}
                     </select>
                     <span className="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
                   </div>
+                  {staffUsers.length === 0 && !isLoadingStaff && (
+                    <p className="font-body-xs text-body-xs text-warning mt-1">No staff users found. Add Lecturers/TAs in Role Management.</p>
+                  )}
                 </div>
               </div>
 
