@@ -3,12 +3,14 @@ from enum import Enum
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.controllers.auth import AuthenticatedUser, UserRole, get_current_user
 from src.controllers.google_auth import GOOGLE_AUTH_MODE, is_allowed_domain
 from src.controllers.users import get_or_provision_user, session_was_revoked
 from src.database import get_db
+from src.models.user import User
 
 
 class Action(str, Enum):
@@ -157,3 +159,22 @@ def require_permission(action: Action):
 
     dependency.__name__ = f"require_{action.value}"
     return dependency
+
+
+def get_current_user_db_id(db: Session, user: AuthenticatedUser) -> int | None:
+    """Get current user's database ID from auth session.
+
+    Handles both dev login (email lookup) and Google OAuth (user.id is DB id).
+    Returns None if user not found in database.
+    """
+    if user.auth_mode == GOOGLE_AUTH_MODE:
+        # Google OAuth: user.id is already the DB user ID
+        if user.id.isdigit():
+            return int(user.id)
+        return None
+    # Dev login: look up by email (case-insensitive)
+    if user.email:
+        db_user = db.scalar(select(User).where(User.email.ilike(user.email)))
+        if db_user:
+            return db_user.id
+    return None
