@@ -38,11 +38,11 @@ FastAPI serves the backend API (`src/views`, `src/controllers`) and enforces aut
 - Task tracking has moved to Jira; keep `/docs/iteration-reports/` as the exported record of each iteration for grading purposes
 
 ## Video for each Iteration
-- Iteration1: https://youtu.be/xCs2F6Ga67U?si=K0rZJTp5d6w1YDOn
-- Iteration2
-- Iteration3
-- Iteration4
-- Iteration5
+- Iteration1: https://youtu.be/xCs2F6Ga67U
+- Iteration2: https://youtu.be/SsxFP0dZcYo
+- Iteration3: https://youtu.be/gTiKihbGgsQ
+- Iteration4: https://youtu.be/gWzYgNZbsSE
+- Iteration5: https://youtu.be/VPP77DBcm20
 
 ---
 
@@ -181,6 +181,38 @@ created by **Alembic** migrations in `migrations/`. ER diagram:
 If `DATABASE_URL` is empty the app uses a local SQLite file (`guildboard.db`) and
 creates tables automatically; tests always use in-memory SQLite.
 
+---
+
+### Demo Data Seeding (scripts/seed_data.py)
+
+Populates the database with realistic demo data for all features:
+
+```bash
+# With Docker Compose running:
+docker compose exec backend python scripts/seed_data.py
+```
+
+**What it seeds (idempotent — safe to run multiple times):**
+
+| Table | Count | Details |
+|-------|-------|---------|
+| `users` | 11 | 4 Lecturers, 3 TAs, 3 Students, 1 Admin — matches `.env.example` demo emails |
+| `events` | 9 | Course events with correct instructor names from seeded lecturers |
+| `course_materials` | 3 | Materials with versioning, linked to events |
+| `tickets` | 5 | Teaching-task tickets assigned to seeded TAs (owner_email links to users) |
+| `consultation_sessions` | 3 | TA-recorded student consultations |
+| `ticket_comments` | 3 | Comments on tickets by seeded staff |
+
+**Demo accounts (from `.env.example`):**
+- Lecturers: `lecturer.demo@ku.th` (Aj. Hutchathai), `lecturer2.demo@ku.th` (Aj. Suwichak), `lecturer3.demo@ku.th` (Aj. Chantana), `lecturer4.demo@ku.th` (Aj. Pajee)
+- TAs: `ta.demo@ku.th` (Alex Chen), `ta2.demo@ku.th` (Prima X), `ta3.demo@ku.th` (Picha W)
+- Students: `student.demo@ku.th` (Sarah Jenkins), `student2.demo@ku.th` (Alexei Kozlov), `student3.demo@ku.th` (John Doe)
+- Admin: `admin.demo@ku.th` (System Admin)
+
+All passwords: `demo_*_password_123` (see `.env.example`).
+
+Run this after any database reset (`docker compose down -v && docker compose up --build`) to repopulate demo data.
+
 ## Testing
 
 Run the backend tests from the repository root after installing `requirements.txt`:
@@ -284,9 +316,8 @@ authorization boundary.
 
 ## Known Limitations
 
-- Google OAuth2 is configured but not fully integrated in production; local dev login is the primary auth method for testing
-- Course Materials upload accepts ZIP only (≤25MB); other formats rejected by backend validation
-- Search does not yet support pagination (returns all matching results)
-- Frontend Role Management page uses client-side filtering in addition to server-side API filters
-- Ticket comments are not yet editable/deletable after creation
-- No email notifications for ticket updates or comments
+- **Seeded materials can't be downloaded.** The demo data adds material records to the database but no actual files. To test downloading, upload a file first on the Course Materials page, then download that one.
+- **No delete or edit for course materials.** A material can be uploaded and downloaded, but there is no delete button in the UI.
+- **Google sign-in needs your own credentials.** Real `@ku.th` login only works after you add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to `.env`. Without them, use the demo accounts from `.env.example`.
+- **Reminder emails need SMTP settings.** If `SMTP_USERNAME` is empty, no email is sent. Reminders are still saved.
+- Resetting Docker with `docker compose down -v` deletes the local database, including uploaded files and roles. Run the seed script again afterwards.
