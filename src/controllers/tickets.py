@@ -7,7 +7,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.controllers.access import Action, ensure_permission
-from src.controllers.auth import AuthenticatedUser
+from src.controllers.auth import AuthenticatedUser, UserRole
+from src.controllers.validation import (
+    APIValidationError,
+    _clean,
+    _is_blank,
+    validate_model,
+)
 from src.models.ticket import Ticket, TicketCreate, TicketUpdate
 
 ERROR_REQUIRED_FIELDS_MISSING = "REQUIRED_FIELDS_MISSING"
@@ -16,39 +22,8 @@ ERROR_INVALID_FIELD_FORMAT = "INVALID_FIELD_FORMAT"
 CLEARABLE_FIELDS = {"description", "owner_role"}
 
 
-class TicketValidationError(Exception):
-    def __init__(self, error: str, detail: str, status_code: int, **extra: Any) -> None:
-        super().__init__(detail)
-        self.error = error
-        self.detail = detail
-        self.status_code = status_code
-        self.extra = extra
-
-    def to_response(self) -> dict[str, Any]:
-        return {"detail": self.detail, "error": self.error, **self.extra}
-
-
-def _is_blank(value: Any) -> bool:
-    return value is None or (isinstance(value, str) and not value.strip())
-
-
-def _clean(raw: Any) -> dict[str, Any]:
-    data = raw if isinstance(raw, dict) else {}
-    return {key: value.strip() if isinstance(value, str) else value for key, value in data.items()}
-
-
-def _validate(model: type[BaseModel], data: dict[str, Any]) -> Any:
-    try:
-        return model.model_validate(data)
-    except ValidationError as exc:
-        problems = "; ".join(
-            f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}" for error in exc.errors()
-        )
-        raise TicketValidationError(
-            ERROR_INVALID_FIELD_FORMAT,
-            f"Invalid ticket field(s): {problems}.",
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-        ) from None
+class TicketValidationError(APIValidationError):
+    pass
 
 
 def validate_ticket_create(raw: Any) -> TicketCreate:
@@ -63,11 +38,11 @@ def validate_ticket_create(raw: Any) -> TicketCreate:
             status.HTTP_400_BAD_REQUEST,
             missing_fields=missing,
         )
-    return _validate(TicketCreate, cleaned)
+    return validate_model(TicketCreate, cleaned, ERROR_INVALID_FIELD_FORMAT, error_class=TicketValidationError)
 
 
 def validate_ticket_update(raw: Any) -> TicketUpdate:
-    return _validate(TicketUpdate, _clean(raw))
+    return validate_model(TicketUpdate, _clean(raw), ERROR_INVALID_FIELD_FORMAT, error_class=TicketValidationError)
 
 
 def list_tickets(db: Session, *, status_filter: str | None = None) -> list[Ticket]:
@@ -84,7 +59,13 @@ def get_ticket(db: Session, ticket_id: int) -> Ticket | None:
 def create_ticket(db: Session, payload: TicketCreate, user: AuthenticatedUser) -> Ticket:
     ensure_permission(user, Action.CREATE_TICKET)
 
-    ticket = Ticket(**payload.model_dump(), created_by=user.id)
+    data = payload.model_dump()
+    owner_provided = bool(data.get("owner"))
+    if not owner_provided:
+        data["owner"] = user.name
+        data["owner_email"] = user.email
+
+    ticket = Ticket(**data, created_by=user.id)
     db.add(ticket)
     db.commit()
     db.refresh(ticket)
